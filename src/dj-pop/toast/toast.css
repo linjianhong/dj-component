@@ -1,0 +1,17 @@
+
+dj-toast {
+  opacity: 0;
+  display: inline-block;
+  position: fixed;
+  padding: 8px 10px;
+  z-index: 5000;
+  background: rgba(17, 17, 17, 0.7);
+  text-align: center;
+  border-radius: 3px;
+  color: #FFFFFF;
+  left: 0;
+  right: 0;
+  bottom: 80px;
+  margin: auto;
+  max-width: 40%;
+}

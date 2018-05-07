@@ -1,0 +1,57 @@
+
+
+djui-input > div {
+  width: 100%;
+}
+djui-input input {
+  border-width: 0;
+}
+djui-input i:first-child{
+  color:#cccccc;
+}
+djui-input > div > i.fa{
+  padding: 0 .08rem;
+  font-size: 1.5em;
+}
+
+
+djui-star {
+  display: inline-block;
+}
+djui-star > * {
+  height: 100%;
+}
+djui-star > * > .star {
+  height: 100%;
+  font-size: 1.5em;
+  line-height: 1.5em;
+  color: #ff8800;
+  padding: 0 0.3em;
+}
+
+
+djui-tags{
+  display: inline-block;
+}
+djui-tags > * > .tag {
+  padding: 0.2em 1em;
+  border: solid 1px #dddddd;
+  margin: 0.3em;
+  border-radius: 0.3em;
+}
+djui-tags > * > .tag.active {
+  background: #6699cc;
+  color: #ffffff;
+}
+
+djui-tags-show{
+  display: inline-block;
+}
+djui-tags-show > * > .tag {
+  padding: .1em .3em;
+  border: solid 1px #eeeeee;
+  background: #eeeeee;
+  margin: .1em .2em .1em 0;
+  border-radius: 0.2em;
+}
+

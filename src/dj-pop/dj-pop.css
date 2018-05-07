@@ -1,0 +1,15 @@
+dj-component-host{
+  display: block;
+  position: absolute;
+  z-index: 900;
+  width: 100vw;
+  height: 100vh;
+  top:0;
+  left:0;
+  background: #888888f8;
+}
+
+dj-component-host .dj-pop-box{
+  width: 100%;
+  height: 100%;
+}

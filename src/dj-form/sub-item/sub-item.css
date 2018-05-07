@@ -1,0 +1,129 @@
+/* 动态表单子组件 */
+dj-form-item > * > input ,
+dj-form-item > * > textarea ,
+dj-form-item > * > djui-input ,
+dj-form-item > * > uib-dropdown ,
+dj-form-item > * > select,
+dj-form-item > * > * > select {
+  line-height: 2.2em;
+  width: 100%;
+  height: 2.2em;
+  border: 1px solid #e6e6e6;
+  border-radius: 0.04rem;
+  padding-left: .1rem;
+  -webkit-appearance: none;
+  outline: 0;
+  font-size: inherit;
+}
+dj-form-item > .box > textarea{
+  min-height: 5em;
+}
+dj-form-item > .box > select[multiple].multiple{
+  height: auto;
+  min-height: 5em;
+  max-height: 12em;
+}
+dj-form-item > .ng-invalid > input ,
+dj-form-item > .ng-invalid > djui-input ,
+dj-form-item > .ng-invalid > uib-dropdown ,
+dj-form-item > .ng-invalid > select,
+dj-form-item > .ng-invalid > * > select {
+  border: 1px solid #ff000033;
+}
+
+
+dj-form-item-input > djui-input {
+  width: 100%;
+  padding: .1rem;
+}
+
+dj-form-item .prompt-top {
+  font-size: inherit;
+  padding: 0.02rem .05rem;
+}
+dj-form-item .prompt-top > .title {
+  font-size: inherit;
+}
+dj-form-item .prompt-top > .title > .require{
+  font-size: inherit;
+  font-weight: 900;
+  color: #888888;
+  padding: 0 .02rem 0 0;
+}
+dj-form-item > .ng-invalid .prompt-top > .title > .require{
+  color: #ff0000;
+}
+dj-form-item .prompt-top > .prompt {
+  font-size: 0.8em;
+  color: #888;
+}
+dj-form-item .prompt-top > .prompt {
+  font-size: 0.8em;
+  color: #f00;
+}
+
+/* 下拉框*/
+dj-form-default-item-dropdown  {
+  position: relative;
+  z-index: 1;
+}
+dj-form-default-item-dropdown:after {
+  content: " ";
+  display: inline-block;
+  height: 6px;
+  width: 6px;
+  border-width: 2px 2px 0 0;
+  border-color: #C8C8CD;
+  border-style: solid;
+  -webkit-transform: matrix(0.71, 0.71, -0.71, 0.71, 0, 0);
+  transform: matrix(0.71, 0.71, -0.71, 0.71, 0, 0);
+  position: relative;
+  top: -2px;
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  margin-top: -4px;
+}
+
+
+
+dj-form-default-item-combobox > .inputs {
+  position: relative;
+}
+dj-form-default-item-combobox > .inputs > djui-input,
+dj-form-default-item-combobox > .inputs > select {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+}
+
+dj-form-default-item-combobox > .inputs > djui-input {
+  z-index: 12;
+  width: calc(100% - 2em);
+  padding: inherit;
+}
+
+dj-form-default-item-combobox > .inputs > .caret-down {
+  z-index: 10;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 2em;
+  height: 100%;
+  padding: .6em;
+}
+.caret-down > *{
+  border: solid .5em transparent;
+  border-top: solid .5em #888888;
+  border-bottom: solid 0;
+}
+
+dj-form-default-item-combobox > .inputs > select {
+  z-index: 11;
+  opacity: 0;
+}
+
+
+
+

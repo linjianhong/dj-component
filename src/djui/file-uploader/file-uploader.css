@@ -1,0 +1,22 @@
+imgs-uploader {
+  display: inline-block;
+}
+
+imgs-uploader .imgs-uploader-box{
+  position: relative;
+}
+
+imgs-uploader .imgs-uploader-box input[type='file']{
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+
+imgs-uploader .preview-box img{
+  width: 100%;
+  height: 100%;
+}

@@ -1,0 +1,17 @@
+{
+  "name": "dj-component",
+  "authors": [
+    "linjianhong <linjianhong@github.com>"
+  ],
+  "description": "dj-component",
+  "main": "dj-component.js",
+  "keywords": [
+    "dj",
+    "component",
+    "angular",
+    "form",
+    "ui"
+  ],
+  "license": "dj",
+  "homepage": "https://npm.jdyhy.com"
+}
