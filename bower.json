@@ -1,10 +1,17 @@
 {
   "name": "dj-component",
+  "version": "0.1.0",
   "authors": [
     "linjianhong <linjianhong@github.com>"
   ],
   "description": "dj-component",
-  "main": "dj-component.js",
+  "main": [
+    "dist/dj-component.js",
+    "dist/dj-component.css"
+  ],
+  "styles": [
+    "dist/dj-component.css"
+  ],
   "keywords": [
     "dj",
     "component",
