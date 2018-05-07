@@ -1,6 +1,5 @@
 
 var theName = 'dj-component';
-var theVer = '0.1.2';
 
 var
   gulp = require('gulp'),
@@ -24,10 +23,10 @@ gulp.task('make-js', function () {
 
 gulp.task('make-css', function () {
   return gulp.src(['src/**/*.css'])
-    .pipe(concat(theName + "-" + theVer + ".css"))
+    .pipe(concat(theName + ".css"))
     .pipe(gulp.dest("dist"))
     .pipe(cleanCSS())
-    .pipe(concat(theName + "-" + theVer + ".min.css"))
+    .pipe(concat(theName + ".min.css"))
     .pipe(gulp.dest("dist"));
 });
 
@@ -41,7 +40,7 @@ gulp.task('demo', function () {
 
 gulp.task('make-dist', ['make-modules', 'make-js', 'make-css', 'demo'], function () {
   return gulp.src(['tmp/1.js', 'tmp/2.js'])
-    .pipe(concat(theName + "-" + theVer + ".js"))
+    .pipe(concat(theName + ".js"))
     .pipe(babel({ presets: ['es2015'] }))
     .on('error', function (err) {
       console.log('babel 转换错误：', err);
@@ -49,7 +48,7 @@ gulp.task('make-dist', ['make-modules', 'make-js', 'make-css', 'demo'], function
     })
     .pipe(gulp.dest("dist"))
     .pipe(uglify({ compress: { drop_console: true } }))
-    .pipe(concat(theName + "-" + theVer + ".min.js"))
+    .pipe(concat(theName + ".min.js"))
     .pipe(gulp.dest("dist"));
 });
 
