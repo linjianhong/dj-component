@@ -7,7 +7,7 @@
 
 ## Demo
 
-[Demo](demo/index.html)
+[Demo](https://linjianhong.github.io/dj-component/demo/index.html)
 
 
 ## Installation
