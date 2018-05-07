@@ -1,63 +1,59 @@
 /* 动态表单子组件 */
-dj-form-item > * > input ,
-dj-form-item > * > textarea ,
-dj-form-item > * > djui-input ,
-dj-form-item > * > uib-dropdown ,
-dj-form-item > * > select,
-dj-form-item > * > * > select {
+dj-form-item-host > * > input ,
+dj-form-item-host > * > textarea ,
+dj-form-item-host > * > djui-input ,
+dj-form-item-host > * > uib-dropdown ,
+dj-form-item-host > * > select,
+dj-form-item-host > * > * > select {
   line-height: 2.2em;
   width: 100%;
   height: 2.2em;
   border: 1px solid #e6e6e6;
-  border-radius: 0.04rem;
-  padding-left: .1rem;
+  border-radius: .3em;
+  padding-left: 1em;
   -webkit-appearance: none;
   outline: 0;
   font-size: inherit;
 }
-dj-form-item > .box > textarea{
+dj-form-default-item-textarea > textarea{
   min-height: 5em;
 }
-dj-form-item > .box > select[multiple].multiple{
-  height: auto;
-  min-height: 5em;
-  max-height: 12em;
-}
-dj-form-item > .ng-invalid > input ,
-dj-form-item > .ng-invalid > djui-input ,
-dj-form-item > .ng-invalid > uib-dropdown ,
-dj-form-item > .ng-invalid > select,
-dj-form-item > .ng-invalid > * > select {
+
+dj-form-item-host > .ng-invalid > input ,
+dj-form-item-host > .ng-invalid > djui-input ,
+dj-form-item-host > .ng-invalid > uib-dropdown ,
+dj-form-item-host > .ng-invalid > select,
+dj-form-item-host > .ng-invalid > * > select {
   border: 1px solid #ff000033;
 }
 
 
 dj-form-item-input > djui-input {
   width: 100%;
-  padding: .1rem;
+  padding: 1em;
 }
 
-dj-form-item .prompt-top {
+dj-form-item-host .prompt-top {
   font-size: inherit;
-  padding: 0.02rem .05rem;
+  padding: 0.3em .06em;
 }
-dj-form-item .prompt-top > .title {
+dj-form-item-host .prompt-top > .title {
   font-size: inherit;
 }
-dj-form-item .prompt-top > .title > .require{
+dj-form-item-host .prompt-top > .title > .require{
   font-size: inherit;
   font-weight: 900;
   color: #888888;
-  padding: 0 .02rem 0 0;
+  padding: 0 .3em 0 0;
 }
-dj-form-item > .ng-invalid .prompt-top > .title > .require{
+dj-form-item-host > .ng-invalid .prompt-top > .title > .require{
   color: #ff0000;
 }
-dj-form-item .prompt-top > .prompt {
+dj-form-item-host .prompt-top > .prompt {
   font-size: 0.8em;
   color: #888;
 }
-dj-form-item .prompt-top > .prompt {
+dj-form-item-host .prompt-top > .prompt {
   font-size: 0.8em;
   color: #f00;
 }
@@ -122,6 +118,32 @@ dj-form-default-item-combobox > .inputs > .caret-down {
 dj-form-default-item-combobox > .inputs > select {
   z-index: 11;
   opacity: 0;
+}
+
+
+/* 下拉框*/
+dj-form-item-select > select {
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+dj-form-item-select > select:after {
+  content: " ";
+  display: inline-block;
+  height: 6px;
+  width: 6px;
+  border-width: 2px 2px 0 0;
+  border-color: #C8C8CD;
+  border-style: solid;
+  -webkit-transform: matrix(0.71, 0.71, -0.71, 0.71, 0, 0);
+  transform: matrix(0.71, 0.71, -0.71, 0.71, 0, 0);
+  position: relative;
+  top: -2px;
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  margin-top: -4px;
 }
 
 

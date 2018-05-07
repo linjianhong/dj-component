@@ -19,7 +19,7 @@
       onFormStatus: '&'
     },
     template: `
-      <dj-form-item-host class="{{$ctrl.configs.css.form || 'flex-v rem-15 item-box'}} {{$ctrl.configs.css.form2}} mode-{{mode}}"
+      <dj-form-item-host class="{{$ctrl.configs.css.host || 'flex-v'}} {{$ctrl.configs.css.host2}} mode-{{mode}}"
         mode="mode=='show' && 'show' || subItem.mode"
         configs="subItem"
         init-value="memValue[subItem.name]"

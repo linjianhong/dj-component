@@ -13,7 +13,7 @@ dj-form input{
 
 dj-form-item-host {
   font-size: inherit;
-  margin-bottom: .15rem;
+  margin-bottom: 1em;
 }
 dj-form-item-host > * {
   font-size: inherit;

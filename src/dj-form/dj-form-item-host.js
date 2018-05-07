@@ -84,8 +84,8 @@
       $element.append(childElement[0]);
       var childScope = $scope.$$childHead;
       var childTemplate = configs.template || DjFormDefaultDefine.getTemplateEdit(eleType);
-      var childContent = $compile(childTemplate)(childScope);
-      childElement.html(childContent);
+      childElement.html(childTemplate);
+      $compile(childElement.contents())(childScope);
     };
 
     /** 数据校验 */

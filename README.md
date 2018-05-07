@@ -7,7 +7,7 @@
 
 ## Demo
 
-later...
+[Demo](demo/index.html)
 
 
 ## Installation
@@ -28,10 +28,10 @@ $ bower install dj-component
 #### Use after download
 
 ```
-<link rel="stylesheet" href="yourlibpath/dj-component.css" />
+<link rel="stylesheet" href="yourlibpath/dj-component-0.1.2.css" />
 
 <!-- after include angular.js  -->
-<script src="yourlibpath/dj-component.js"></script>
+<script src="yourlibpath/dj-component-0.1.2.js"></script>
 ```
 
 
@@ -41,7 +41,7 @@ add dependencies in `bower.json` like this:
   "dependencies": {
     "angular": "^1.6.1",
     "angular-animate": "^1.6.1",
-    "dj-component": "0.1.1",
+    "dj-component": "0.1.2",
     //...
   }
 ```

@@ -2,11 +2,48 @@ imgs-uploader {
   display: inline-block;
 }
 
-imgs-uploader .imgs-uploader-box{
+imgs-uploader > .box > .img{
   position: relative;
+  width: 5em;
+  height: 5em;
+  margin: 0 .5em .5em 0;
+}
+imgs-uploader > .box > .img.uploading,
+imgs-uploader > .box > .img.add{
+  border: solid 1px #cccccc;
 }
 
-imgs-uploader .imgs-uploader-box input[type='file']{
+imgs-uploader > .box > .img.uploading{
+  background: rgba(0,0,0,0.1);
+}
+imgs-uploader > .box > .img.uploading > .per{
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
+}
+
+imgs-uploader > .box > .img.add:after,
+imgs-uploader > .box > .img.add:before{
+  content: ' ';
+  position: absolute;
+  background: #cccccc;
+}
+imgs-uploader > .box > .img.add:before{
+  top: 2.5em;
+  left: 20%;
+  width: 60%;
+  height: 1px;
+}
+imgs-uploader > .box > .img.add:after{
+  left: 2.5em;
+  top: 20%;
+  width: 1px;
+  height: 60%;
+}
+
+imgs-uploader > .box > .img input[type='file']{
   position: absolute;
   z-index: 1;
   left: 0;
@@ -16,7 +53,7 @@ imgs-uploader .imgs-uploader-box input[type='file']{
   opacity: 0;
 }
 
-imgs-uploader .preview-box img{
+imgs-uploader > .box > .img img{
   width: 100%;
   height: 100%;
 }

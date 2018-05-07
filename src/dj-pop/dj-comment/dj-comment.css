@@ -196,9 +196,9 @@ input, button {
   padding: .5em 2em;
 }
 .btns > .btn{
-  padding: .10rem 0;
+  padding: 1em 0;
   text-align: center;
-  border-radius: .03rem;
+  border-radius: .3em;
 }
 
 
@@ -206,7 +206,7 @@ input, button {
 dj-form-item-host.publish {
   border-bottom: solid 1px #eeeeee;
   margin-bottom: 0;
-  font-size: .13rem;
+  font-size: 1em;
   padding: 0 1em;
 }
 dj-form-item-host.publish.mode-show {

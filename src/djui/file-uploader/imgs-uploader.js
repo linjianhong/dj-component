@@ -21,19 +21,15 @@
     })
     .component('imgsUploader', {
       template: `
-        <div class="weui-uploader">
-          <div class="weui-uploader__bd">
-            <ul class="weui-uploader__files">
-              <li class="weui-uploader__file preview-box" ng-click="clickImg($index)" ng-repeat='img in imgList track by $index'>
-                <img ng-src="{{img|preview}}" />
-              </li>
-              <li class="weui-uploader__file weui-uploader__file_status" ng-repeat='file in File.uploadingFiles track by $index'>
-                <div class="weui-uploader__file-content">{{file.per}}%</div>
-              </li>
-              <div class="imgs-uploader-box weui-uploader__input-box" ng-if="mode!='show' && imgList.length < (maxCount||9)">
-                <input type="file" multiple accept="image/*,video/mp4" multi-file-upload change="File.onFile($files)">
-              </div>
-            </ul>
+        <div class="box flex flex-left flex-wrap">
+          <div class="img preview" ng-click="clickImg($index)" ng-repeat='img in imgList track by $index'>
+            <img ng-src="{{img|preview}}" />
+          </div>
+          <div class="img uploading" ng-repeat='file in File.uploadingFiles track by $index'>
+            <div class="per">{{file.per}}%</div>
+          </div>
+          <div class="img add" ng-if="mode!='show' && imgList.length < (maxCount||9)">
+            <input type="file" multiple accept="image/*,video/mp4" multi-file-upload change="File.onFile($files)">
           </div>
         </div>
       `,
@@ -44,10 +40,10 @@
         mode: '@',
         updateImg: "&" //选择图片更新用的回调函数
       },
-      controller: ["$scope", "$http", "IMG", "DjPop", "DjDialog", ctrl]
+      controller: ["$scope", "$http", "IMG", "DjPop", ctrl]
     });
 
-  function ctrl($scope, $http, IMG, DjPop, DjDialog) {
+  function ctrl($scope, $http, IMG, DjPop) {
     var imgData = this.imgData = { uploadings: [] };
     $scope.imgList = [];
     this.countError = 0;
@@ -69,7 +65,7 @@
 
     this.deleteImg = (n) => {
       if (n < 0 || n >= $scope.imgList.length) return;
-      return DjDialog.confirm("您确认要删除当前图片?").then(a => {
+      return DjPop.confirm("您确认要删除当前图片?").then(a => {
         $scope.imgList.splice(n, 1);
         //console.log("删除加图片", $scope.imgList);
         this.updateImg({ imgs: $scope.imgList });
@@ -102,7 +98,6 @@
      * 上传模块
      **/
     var self = this;
-    $scope.imgPath = "https://pgytc.oss-cn-beijing.aliyuncs.com/cmoss/upload-img/";
     var File = $scope.File = {
       subTreeId: 0,
       uploadingFiles: [],

@@ -29,7 +29,7 @@
           return;
         }
         var sBinds = "";
-        if(param)for(var k in param){
+        if (param) for (var k in param) {
           $scope[k] = param[k];
           sBinds += ` ${k}="${k}"`
         }
@@ -98,52 +98,66 @@
     * @param {function|false} options.beforeClose: 将要关闭，返回 false, 或 reject, 不可关闭
     * @param {function|false} options.onClose: 关闭时回调
     */
-   function showComponent(options) {
-     if(!options || !options.template) return $q.reject("无模板");
-     var waiteDialog = new DjWaiteReady();
-     var element = options.element || document.body;
-     var scopeParent = options.scope || $rootScope;
-     var scopeDjPop = scopeParent.$new();
-     scopeDjPop.options = options;
-     var template = options.template;
-     var dlg = $compile(template)(scopeDjPop);
-     element.append(dlg[0]);
-     var listener = scopeDjPop.$on("dj-pop-box-close", function (event, data) {
-       event.preventDefault();
-       closeDjg(data);
-     });
-     //显示时按浏览器的后退按钮：关闭对话框
-     var listener2 = scopeDjPop.$on("$locationChangeStart", function (event) {
-       event.preventDefault();
-       closeDjg("locationChange");
-     });
-     return waiteDialog.ready();
+    function showComponent(options) {
+      if (!options || !options.template) return $q.reject("无模板");
+      var waiteDialog = new DjWaiteReady();
+      var element = options.element || document.body;
+      var scopeParent = options.scope || $rootScope;
+      var scopeDjPop = scopeParent.$new();
+      scopeDjPop.options = options;
+      var template = options.template;
+      var dlg = $compile(template)(scopeDjPop);
+      element.append(dlg[0]);
+      var listener = scopeDjPop.$on("dj-pop-box-close", function (event, data) {
+        event.preventDefault();
+        closeDjg(data);
+      });
+      //显示时按浏览器的后退按钮：关闭对话框
+      var listener2 = scopeDjPop.$on("$locationChangeStart", function (event) {
+        event.preventDefault();
+        closeDjg("locationChange");
+      });
+      return waiteDialog.ready();
 
-     function closeDjg(data) {
-       setTimeout(() => {
-         scopeDjPop.$destroy();
-         dlg && dlg.remove();
-         dlg = null;
-       })
-       //console.log('对话框关闭', data);
-       waiteDialog.resolve(data);
-     }
-   }
+      function closeDjg(data) {
+        setTimeout(() => {
+          scopeDjPop.$destroy();
+          dlg && dlg.remove();
+          dlg = null;
+        })
+        //console.log('对话框关闭', data);
+        waiteDialog.resolve(data);
+      }
+    }
 
 
-    function gallery(options){
+    function gallery(options) {
       return show("dj-gallery", options);
     }
 
-    function toast(options){
+    function toast(options) {
       options = options || {};
       options.template = `<dj-toast text="${options.text}" delay="${options.delay}"></dj-toast>`;
+      return showComponent(options);
+    }
+
+    function confirm(options) {
+      options = options || {};
+      if (angular.isString(options)) {
+        options = { title: options }
+      }
+      options.template = `
+      <dj-dialog
+        dlg-body="${options.body}"
+        dlg-title="${options.title || 'confirm'}"
+      ></dj-dialog>`;
       return showComponent(options);
     }
 
     return {
       show,
       toast,
+      confirm,
       gallery,
     }
   }])

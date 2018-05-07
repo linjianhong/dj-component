@@ -19,6 +19,10 @@
     "form",
     "ui"
   ],
+  "dependencies": {
+    "angular": "1.6.1",
+    "angular-animate": "1.6.1"
+  },
   "license": "dj",
   "homepage": "https://github.com/linjianhong/dj-component"
 }
