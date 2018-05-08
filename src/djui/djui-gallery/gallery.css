@@ -1,5 +1,6 @@
 
 djui-gallery{
+  position: relative;
   display: block;
   width: 100%;
   height:100%;
@@ -51,34 +52,33 @@ djui-gallery{
 .djui-gallery-box > .djui-gallery-debug  {
   position: absolute;
   z-index: 2;
-  top: .30rem;
+  top: 3em;
   left: 0;
   width: 100%;
-  height: .50rem;
+  height: 5em;
   background: #ffcccccc;
   text-align: center;
 }
 
 
-.djui-gallery-box > .djui-gallery-nav  {
+.djui-gallery-nav  {
   position: absolute;
   z-index: 2;
-  bottom: .30rem;
+  bottom: 1.5em;
   left: 0;
   width: 100%;
 }
-.djui-gallery-box > .djui-gallery-nav > *,
-.djui-gallery-box > .djui-gallery-nav > * > *{
-  font-size: .26rem;
+.djui-gallery-nav > *,
+.djui-gallery-nav > * > *{
+  font-size: inherit;
   line-height: 1.1;
 }
 
-.djui-gallery-box > .djui-gallery-nav > .btns {
-  padding-right: .25rem;
+.djui-gallery-nav > .btns {
+  padding-right: 1em;
 }
-
-.djui-gallery-box > .djui-gallery-nav > .btns > * {
+.djui-gallery-nav > .btns > * {
   background: #88888888;
-  padding: .05rem .10rem;
-  border-radius: .05rem;
+  padding: .5em 1em;
+  border-radius: .5em;
 }

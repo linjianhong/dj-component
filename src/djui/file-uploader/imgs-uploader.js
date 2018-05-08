@@ -63,22 +63,21 @@
       }
     }
 
-    this.deleteImg = (n) => {
+    this.deleteImg = (n, imgs) => {
       if (n < 0 || n >= $scope.imgList.length) return;
       return DjPop.confirm("您确认要删除当前图片?").then(a => {
-        $scope.imgList.splice(n, 1);
-        //console.log("删除加图片", $scope.imgList);
+        imgs.splice(n, 1);
+        $scope.imgList = angular.merge([], imgs);;
+        console.log("删除加图片", $scope.imgList);
         this.updateImg({ imgs: $scope.imgList });
       });
     }
     $scope.clickImg = (n) => {
       //DjPop.show("show-gallery", {imgs: this.imgs, remove: this.deleteImg})
       DjPop.gallery({
-        param: {
-          imgs: $scope.imgList,
-          active: n,
-          btns: $scope.mode=="show"? []:[{ css: "fa fa-trash-o text-visited", fn: this.deleteImg }]
-        }
+        imgs: $scope.imgList,
+        active: n,
+        btns: $scope.mode == "show" ? [] : [{ css: "icon-del", fn: this.deleteImg }]
       }).then(data => {
         //console.log("show-gallery", data);
       }).catch(data => {
@@ -151,7 +150,7 @@
           .then(json => json.datas)
           .catch(e => {
             //console.log("准备上传图片，无签名！")
-            return { url: "upload/img", data: {} };
+            return { url: "/api/file/upload/img", data: {} };
           })
           .then(signed => {
             angular.forEach(File.uploadingFiles, file => {

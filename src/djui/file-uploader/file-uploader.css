@@ -57,3 +57,45 @@ imgs-uploader > .box > .img img{
   width: 100%;
   height: 100%;
 }
+
+
+
+
+
+/* 删除图标 */
+.icon-del{
+  border: 0.1em solid currentColor;
+  border-top: none;
+  border-radius: 0 0 0.2em 0.2em;
+  width: 1em;
+  height: .8em;
+  /* margin: 50px auto; */
+  position: relative;
+  margin-top: .3em;
+  color: #550055;
+}
+.icon-del::after{
+  content: " ";
+  width: 1.4em;
+  height: 0.1em;
+  position: absolute;
+  top: 0;
+  left: -0.3em;
+  background-color: currentcolor;
+}
+.icon-del::before {
+  content: " ";
+  border-radius: 0.2em 0.2em 0 0;
+  position: absolute;
+  top: -0.2em;
+  left: 0em;
+  height: 0.2em;
+  width: .6em;
+  border: 0.1em solid currentColor;
+  border-bottom: none;
+}
+
+
+
+
+

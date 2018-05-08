@@ -20,20 +20,20 @@
             <img class="" ng-src="{{img}}"/>
           </div>
         </div>
-        <div class="djui-gallery-nav flex flex-between">
-          <div class="dots flex flex-1 flex-center" ng-if="1">
-            <div ng-click="scrollTo($index)" ng-repeat="img in imgs track by $index">{{$index==active&&'●'||'○'}}</div>
-          </div>
-          <div class="btns flex flex-center" ng-if="$ctrl.btns.length">
-            <div ng-click="clickButton(btn)" ng-repeat="btn in $ctrl.btns track by $index">
-              <div class="{{btn.css}}">{{btn.text||''}}</div>
-            </div>
-          </div>
-        </div>
         <div class="djui-gallery-debug" ng-if="debug">
           {{debug}}
         </div>
         <div class="djui-gallery-top" ng-if="isMoving">
+        </div>
+      </div>
+      <div class="djui-gallery-nav flex flex-between">
+        <div class="dots flex flex-1 flex-center" ng-if="1">
+          <div ng-click="scrollTo($index)" ng-repeat="img in imgs track by $index">{{$index==active&&'●'||'○'}}</div>
+        </div>
+        <div class="btns flex flex-center" ng-if="$ctrl.btns.length">
+          <div ng-click="clickButton(btn)" ng-repeat="btn in $ctrl.btns track by $index">
+            <div class="{{btn.css}}">{{btn.text||''}}</div>
+          </div>
         </div>
       </div>
     `,
@@ -56,10 +56,13 @@
       }
 
       this.$onInit = () => {
+        setHandleMouse(".djui-gallery-box");
+      }
+      function setHandleMouse (selector) {
         setTimeout(() => {
           Move.init();
           var eleHandleMouse = $element[0];
-          eleHandleMouse = $element[0].querySelector(".djui-gallery-list");
+          eleHandleMouse = $element[0].querySelector(selector);
           eleHandleMouse.addEventListener('mousedown', Move.onTouchstart, true);
           eleHandleMouse.addEventListener('touchstart', Move.onTouchstart, true);
           eleHandleMouse.addEventListener('mousemove', Move.onTouchmove, true);
@@ -110,6 +113,7 @@
         },
         setMoving: function (isMoving) {
           $scope.isMoving = isMoving;
+          //if(isMoving)setHandleMouse("djui-gallery-top");
           $scope.$apply();
           //setTimeout(() => { angular.element(Move.list).addClass("flex"); });
         },
@@ -135,7 +139,6 @@
           if (!Move.begin) return;
           if (Move.canceled) return;
           Move.touchstart = true;
-          //console.log("滚动, 移动");
           Move.x1 = (event.touches && event.touches[0] || event).clientX;
           Move.y1 = (event.touches && event.touches[0] || event).clientY;
           Move.list.style.left = (Move.offsetLeft + Move.x1 - Move.x0) + 'px';
@@ -145,6 +148,7 @@
             Move.canceled = true;
             return;
           }
+          // console.log("滚动, 移动", dx, dy);
           // 是否已移动了
           if (Math.abs(Move.x1 - Move.x0) >= Move.min || Math.abs(Move.y1 - Move.y0) >= Move.min) {
             Move.moved = true;
@@ -209,8 +213,10 @@
 
       /** 功能按钮 */
       $scope.clickButton = function (btn) {
-        var result = btn.fn && btn.fn($scope.active);
+        var result = btn.fn && btn.fn($scope.active, $scope.imgs);
+        console.log("点击, result = ", result);
         if (result) $q.when(result).then(r => {
+          $scope.pageCount = $scope.imgs.length;
           if ($scope.pageCount < 1) {
             $scope.$emit("dj-pop-box-close", { active: $scope.active });
           }
