@@ -4,3 +4,16 @@ my-app{
   width: 60%;
   margin: auto;
 }
+
+.editing {
+  text-align: center;
+  padding: .5em;
+  background: #eeeeee;
+}
+
+.editing > * {
+  color: #cccccc;
+}
+.editing > .active {
+  color: #000088;
+}

@@ -1,4 +1,17 @@
 
+.editing {
+  text-align: center;
+  padding: .5em;
+  background: #eeeeee;
+}
+.editing > * {
+  color: #cccccc;
+}
+.editing > .active {
+  color: #000088;
+}
+
+
 
 dj-form.my-form > dj-form-item-host{
   margin: 0;
@@ -25,7 +38,7 @@ dj-form.my-form > dj-form-item-host > * > * > select {
 dj-form.my-form > dj-form-item-host > * > *:first-child{
   width: 6em;
 }
-dj-form.my-form > dj-form-item-host > * > *:nth-child(2){
+dj-form.my-form > dj-form-item-host > * > *:last-child{
   flex: 1;
 }
 
