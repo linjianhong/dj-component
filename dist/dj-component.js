@@ -66,7 +66,7 @@ angular.module('dj-ui', ['ngAnimate']);
     template: '<dj-toast delay="{{options.param.delay}}" text="{{options.param.text}}"></dj-toast>'
   });
 
-  theModule.factory("DjPop", ["$compile", "$rootScope", "DjWaiteReady", "$animateCss", function ($compile, $rootScope, DjWaiteReady, $animateCss) {
+  theModule.factory("DjPop", ["$compile", "$rootScope", "DjWaiteReady", "$animateCss", "$q", function ($compile, $rootScope, DjWaiteReady, $animateCss, $q) {
     /**
      * 显示功能
      * @param {string} component
@@ -219,7 +219,12 @@ angular.module('dj-ui', ['ngAnimate']);
         options = body;
       }
       options.template = '<djui-dialog param="param"></djui-dialog>';
-      return showComponent(options);
+      return showComponent(options).then(function (btnName) {
+        if (btnName != "OK") {
+          return $q.reject(btnName);
+        }
+        return btnName;
+      });
     }
 
     function confirm(body, title) {
@@ -228,7 +233,12 @@ angular.module('dj-ui', ['ngAnimate']);
         options = body;
       }
       options.template = '<djui-dialog param="param"></djui-dialog>';
-      return showComponent(options);
+      return showComponent(options).then(function (btnName) {
+        if (btnName != "OK") {
+          return $q.reject(btnName);
+        }
+        return btnName;
+      });
     }
 
     return {
@@ -309,8 +319,8 @@ angular.module('dj-ui', ['ngAnimate']);
       var eleName = configs.pre + eleType;
       var css = configs.css.hostEdit || configs.css.host || '';
       var template = '\n        <' + eleName + '\n          class="' + css + ' {{dirty&&\'ng-dirty\'||\'\'}} {{!theValid.valid&&\'ng-invalid\'||\'\'}}"\n          configs="$ctrl.configs"\n          init-value="initValue"\n          on-change="onChange(value)"\n          invalid-text="theValid.tip"\n          dj-require="theValid.require"\n          dj-valid="theValid.valid"\n          dj-dirty="theValid.dirty"\n        ></' + eleName + '>\n      ';
-      var childElement = $compile(template)($scope);
-      $element.append(childElement[0]);
+      $element.html(template);
+      var childElement = $compile($element.contents())($scope);
       var childScope = $scope.$$childHead;
       var childTemplate = configs.template || DjFormDefaultDefine.getTemplateEdit(eleType);
       childElement.html(childTemplate);
@@ -517,13 +527,12 @@ angular.module('dj-ui', ['ngAnimate']);
       var eleName = configs.pre + eleType;
       var css = configs.css.hostShow || configs.css.host || '';
       var template = '\n        <' + eleName + '-show\n          class="' + css + '"\n          configs="$ctrl.configs"\n          init-value="$ctrl.initValue"\n        ></' + eleName + '-show>\n      ';
-      var childElement = $compile(template)($scope);
-      $element.append(childElement[0]);
-      //console.log("HOST 编译 childElement=", childElement);
+      $element.html(template);
+      var childElement = $compile($element.contents())($scope);
       var childScope = $scope.$$childHead;
       var childTemplate = configs.template || DjFormDefaultDefine.getTemplateShow(eleType);
-      var childContent = $compile(childTemplate)(childScope);
-      childElement.html(childContent);
+      childElement.html(childTemplate);
+      $compile(childElement.contents())(childScope);
     };
   }
 }(window, angular);
@@ -547,12 +556,14 @@ angular.module('dj-ui', ['ngAnimate']);
       onFormValues: '&',
       onFormStatus: '&'
     },
-    template: '\n      <dj-form-item-host class="{{$ctrl.configs.css.host || \'flex-v\'}} {{$ctrl.configs.css.host2}} mode-{{mode}}"\n        mode="mode==\'show\' && \'show\' || subItem.mode"\n        configs="subItem"\n        init-value="memValue[subItem.name]"\n        on-status-change="onItemStatusChange(item, valid, dirty)"\n        on-value-change="onItemValueChange(item, value, valid, dirty)"\n        ng-repeat="subItem in configItems track by $index"\n      ></dj-form-item>',
+    template: '\n      <dj-form-item-host class="{{$ctrl.configs.css.host || \'flex-v\'}} {{$ctrl.configs.css.host2}} mode-{{mode}}"\n        mode="mode==\'show\' && \'show\' || subItem.mode"\n        configs="subItem"\n        init-value="memValue[subItem.name]"\n        on-status-change="onItemStatusChange(item, valid, dirty)"\n        on-value-change="onItemValueChange(item, value, valid, dirty)"\n        ng-repeat="subItem in configItems track by $index"\n        ng-if="!stop"\n      ></dj-form-item>',
     controller: ['$scope', '$element', '$timeout', '$q', 'DjWaiteReady', function ($scope, $element, $timeout, $q, DjWaiteReady) {
       var _this4 = this;
 
       var theMode = false;
       var theChanges = {};
+
+      $scope.stop = true;
 
       this.$onChanges = function (changes) {
         /** 首先，保存所有的参数传递 */
@@ -568,15 +579,29 @@ angular.module('dj-ui', ['ngAnimate']);
           if (mode != 'show') mode = 'edit';
           if (mode != theMode) {
             theMode = $scope.mode = mode;
-            var fn = mode == "show" && ctrlHostShow || ctrlHostEdit;
-            fn.call(_this4, $scope, $element, $timeout, $q, DjWaiteReady);
+            $scope.stop = true;
+            var theValue = $scope.memValue || {};
+            console.log("有 mode 改变: ", theMode, " => ", mode, ", memValue=", theValue);
+            if (!theChanges.configs) theChanges.configs = {};
+            if (!theChanges.configs.currentValue) theChanges.configs.currentValue = $scope.configs;
+            if (!theChanges.initValues) theChanges.initValues = {};
+            if (!theChanges.initValues.currentValue) theChanges.initValues.currentValue = theValue;
+            $timeout(function () {
+              $scope.stop = false;
+              var fn = mode == "show" && ctrlHostShow || ctrlHostEdit;
+              fn.call(_this4, $scope, $element, $timeout, $q, DjWaiteReady);
+              _this4.onChangesCtrl(theChanges);
+              theChanges = {};
+            });
           }
         }
 
         /** 如果有 mode 数据，就响应参数传递 */
-        if (theMode) {
-          _this4.onChangesCtrl(theChanges);
-          theChanges = {};
+        if (theMode && _this4.onChangesCtrl) {
+          $timeout(function () {
+            _this4.onChangesCtrl(theChanges);
+            theChanges = {};
+          });
         }
       };
     }]
@@ -588,12 +613,13 @@ angular.module('dj-ui', ['ngAnimate']);
     var configReady = new DjWaiteReady();
 
     this.onChangesCtrl = function (changes) {
-      if (changes.initValues) {
-        //console.log('上级通知值变化 djForm', changes.initValues);
-        // 初始化整个表单的值，以确保下级上传时，表单值完整
-        initValues(_this5.initValues);
+      if (changes.configs) {
+        $scope.configs = changes.configs.currentValue;
+        initConfigs(changes.configs.currentValue);
       }
-      if (changes.configs) initConfigs(changes.configs.currentValue);
+      if (changes.initValues) {
+        initValues(changes.initValues.currentValue);
+      }
     };
 
     /**
@@ -690,7 +716,9 @@ angular.module('dj-ui', ['ngAnimate']);
     this.onChangesCtrl = function (changes) {
       if (changes.configs) $scope.configs = changes.configs.currentValue;
       if (changes.initValues) $scope.memValue = changes.initValues.currentValue;
-      initConfigs($scope.configs, $scope.memValue);
+      if (changes.configs || changes.initValues) {
+        initConfigs($scope.configs, $scope.memValue);
+      }
     };
     /**
      * 初始化配置
@@ -706,6 +734,12 @@ angular.module('dj-ui', ['ngAnimate']);
         return angular.extend({ pre: pre, css: css, template: templates[item.type + "-show"] }, item);
       });
     };
+
+    /**
+     * 不接收事件
+     */
+    $scope.onItemStatusChange = function () {};
+    $scope.onItemValueChange = function () {};
   }
 }(window, angular);
 /**
@@ -2280,7 +2314,7 @@ angular.module('dj-ui', ['ngAnimate']);
     },
     transclude: true,
     replace: true,
-    template: '\n      <div class="djui-gallery-box">\n        <div class="djui-gallery-list flex" ng-transclude>\n          <div class="djui-gallery-item item-{{$index+1-active}}" ng-repeat="img in imgs track by $index" >\n            <img class="" ng-src="{{img}}"/>\n          </div>\n        </div>\n        <div class="djui-gallery-nav flex flex-between">\n          <div class="dots flex flex-1 flex-center" ng-if="1">\n            <div ng-click="scrollTo($index)" ng-repeat="img in imgs track by $index">{{$index==active&&\'\u25CF\'||\'\u25CB\'}}</div>\n          </div>\n          <div class="btns flex flex-center" ng-if="$ctrl.btns.length">\n            <div ng-click="clickButton(btn)" ng-repeat="btn in $ctrl.btns track by $index">\n              <div class="{{btn.css}}">{{btn.text||\'\'}}</div>\n            </div>\n          </div>\n        </div>\n        <div class="djui-gallery-debug" ng-if="debug">\n          {{debug}}\n        </div>\n        <div class="djui-gallery-top" ng-if="isMoving">\n        </div>\n      </div>\n    ',
+    template: '\n      <div class="djui-gallery-box">\n        <div class="djui-gallery-list flex" ng-transclude>\n          <div class="djui-gallery-item item-{{$index+1-active}}" ng-repeat="img in imgs track by $index" >\n            <img class="" ng-src="{{img}}"/>\n          </div>\n        </div>\n        <div class="djui-gallery-debug" ng-if="debug">\n          {{debug}}\n        </div>\n        <div class="djui-gallery-top" ng-if="isMoving">\n        </div>\n      </div>\n      <div class="djui-gallery-nav flex flex-between">\n        <div class="dots flex flex-1 flex-center" ng-if="1">\n          <div ng-click="scrollTo($index)" ng-repeat="img in imgs track by $index">{{$index==active&&\'\u25CF\'||\'\u25CB\'}}</div>\n        </div>\n        <div class="btns flex flex-center" ng-if="$ctrl.btns.length">\n          <div ng-click="clickButton(btn)" ng-repeat="btn in $ctrl.btns track by $index">\n            <div class="{{btn.css}}">{{btn.text||\'\'}}</div>\n          </div>\n        </div>\n      </div>\n    ',
     controller: ["$scope", "$window", "$element", "$q", "$animateCss", function ($scope, $window, $element, $q, $animateCss) {
       var _this14 = this;
 
@@ -2302,10 +2336,13 @@ angular.module('dj-ui', ['ngAnimate']);
       };
 
       this.$onInit = function () {
+        setHandleMouse(".djui-gallery-box");
+      };
+      function setHandleMouse(selector) {
         setTimeout(function () {
           Move.init();
           var eleHandleMouse = $element[0];
-          eleHandleMouse = $element[0].querySelector(".djui-gallery-list");
+          eleHandleMouse = $element[0].querySelector(selector);
           eleHandleMouse.addEventListener('mousedown', Move.onTouchstart, true);
           eleHandleMouse.addEventListener('touchstart', Move.onTouchstart, true);
           eleHandleMouse.addEventListener('mousemove', Move.onTouchmove, true);
@@ -2314,7 +2351,7 @@ angular.module('dj-ui', ['ngAnimate']);
           eleHandleMouse.addEventListener('touchend', Move.onTouchend, true);
           scrollTo($scope.active);
         });
-      };
+      }
 
       var Move = {
         min: 10, // 超过这个值，表示已滑动，不再是点击了
@@ -2354,6 +2391,7 @@ angular.module('dj-ui', ['ngAnimate']);
         },
         setMoving: function setMoving(isMoving) {
           $scope.isMoving = isMoving;
+          //if(isMoving)setHandleMouse("djui-gallery-top");
           $scope.$apply();
           //setTimeout(() => { angular.element(Move.list).addClass("flex"); });
         },
@@ -2379,7 +2417,6 @@ angular.module('dj-ui', ['ngAnimate']);
           if (!Move.begin) return;
           if (Move.canceled) return;
           Move.touchstart = true;
-          //console.log("滚动, 移动");
           Move.x1 = (event.touches && event.touches[0] || event).clientX;
           Move.y1 = (event.touches && event.touches[0] || event).clientY;
           Move.list.style.left = Move.offsetLeft + Move.x1 - Move.x0 + 'px';
@@ -2389,6 +2426,7 @@ angular.module('dj-ui', ['ngAnimate']);
             Move.canceled = true;
             return;
           }
+          // console.log("滚动, 移动", dx, dy);
           // 是否已移动了
           if (Math.abs(Move.x1 - Move.x0) >= Move.min || Math.abs(Move.y1 - Move.y0) >= Move.min) {
             Move.moved = true;
@@ -2450,8 +2488,10 @@ angular.module('dj-ui', ['ngAnimate']);
 
       /** 功能按钮 */
       $scope.clickButton = function (btn) {
-        var result = btn.fn && btn.fn($scope.active);
+        var result = btn.fn && btn.fn($scope.active, $scope.imgs);
+        console.log("点击, result = ", result);
         if (result) $q.when(result).then(function (r) {
+          $scope.pageCount = $scope.imgs.length;
           if ($scope.pageCount < 1) {
             $scope.$emit("dj-pop-box-close", { active: $scope.active });
           }
@@ -2821,22 +2861,21 @@ angular.module('dj-ui', ['ngAnimate']);
       }
     };
 
-    this.deleteImg = function (n) {
+    this.deleteImg = function (n, imgs) {
       if (n < 0 || n >= $scope.imgList.length) return;
       return DjPop.confirm("您确认要删除当前图片?").then(function (a) {
-        $scope.imgList.splice(n, 1);
-        //console.log("删除加图片", $scope.imgList);
+        imgs.splice(n, 1);
+        $scope.imgList = angular.merge([], imgs);;
+        console.log("删除加图片", $scope.imgList);
         _this15.updateImg({ imgs: $scope.imgList });
       });
     };
     $scope.clickImg = function (n) {
       //DjPop.show("show-gallery", {imgs: this.imgs, remove: this.deleteImg})
       DjPop.gallery({
-        param: {
-          imgs: $scope.imgList,
-          active: n,
-          btns: $scope.mode == "show" ? [] : [{ css: "fa fa-trash-o text-visited", fn: _this15.deleteImg }]
-        }
+        imgs: $scope.imgList,
+        active: n,
+        btns: $scope.mode == "show" ? [] : [{ css: "icon-del", fn: _this15.deleteImg }]
       }).then(function (data) {
         //console.log("show-gallery", data);
       }).catch(function (data) {
@@ -2903,7 +2942,7 @@ angular.module('dj-ui', ['ngAnimate']);
           return json.datas;
         }).catch(function (e) {
           //console.log("准备上传图片，无签名！")
-          return { url: "upload/img", data: {} };
+          return { url: "/api/file/upload/img", data: {} };
         }).then(function (signed) {
           angular.forEach(File.uploadingFiles, function (file) {
             File.uploadFile(signed.url, file, signed.data);

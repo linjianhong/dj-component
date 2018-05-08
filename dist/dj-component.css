@@ -762,6 +762,7 @@ djui-dialog > .djui-dialog > .box > .footer .thin-btns > * {
 
 
 djui-gallery{
+  position: relative;
   display: block;
   width: 100%;
   height:100%;
@@ -813,36 +814,35 @@ djui-gallery{
 .djui-gallery-box > .djui-gallery-debug  {
   position: absolute;
   z-index: 2;
-  top: .30rem;
+  top: 3em;
   left: 0;
   width: 100%;
-  height: .50rem;
+  height: 5em;
   background: #ffcccccc;
   text-align: center;
 }
 
 
-.djui-gallery-box > .djui-gallery-nav  {
+.djui-gallery-nav  {
   position: absolute;
   z-index: 2;
-  bottom: .30rem;
+  bottom: 1.5em;
   left: 0;
   width: 100%;
 }
-.djui-gallery-box > .djui-gallery-nav > *,
-.djui-gallery-box > .djui-gallery-nav > * > *{
-  font-size: .26rem;
+.djui-gallery-nav > *,
+.djui-gallery-nav > * > *{
+  font-size: inherit;
   line-height: 1.1;
 }
 
-.djui-gallery-box > .djui-gallery-nav > .btns {
-  padding-right: .25rem;
+.djui-gallery-nav > .btns {
+  padding-right: 1em;
 }
-
-.djui-gallery-box > .djui-gallery-nav > .btns > * {
+.djui-gallery-nav > .btns > * {
   background: #88888888;
-  padding: .05rem .10rem;
-  border-radius: .05rem;
+  padding: .5em 1em;
+  border-radius: .5em;
 }
 
 imgs-uploader {
@@ -904,3 +904,45 @@ imgs-uploader > .box > .img img{
   width: 100%;
   height: 100%;
 }
+
+
+
+
+
+/* 删除图标 */
+.icon-del{
+  border: 0.1em solid currentColor;
+  border-top: none;
+  border-radius: 0 0 0.2em 0.2em;
+  width: 1em;
+  height: .8em;
+  /* margin: 50px auto; */
+  position: relative;
+  margin-top: .3em;
+  color: #550055;
+}
+.icon-del::after{
+  content: " ";
+  width: 1.4em;
+  height: 0.1em;
+  position: absolute;
+  top: 0;
+  left: -0.3em;
+  background-color: currentcolor;
+}
+.icon-del::before {
+  content: " ";
+  border-radius: 0.2em 0.2em 0 0;
+  position: absolute;
+  top: -0.2em;
+  left: 0em;
+  height: 0.2em;
+  width: .6em;
+  border: 0.1em solid currentColor;
+  border-bottom: none;
+}
+
+
+
+
+
