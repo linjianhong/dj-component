@@ -5,12 +5,504 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 //angular.module('dj-component', ['dj-form', 'dj-pop', 'dj-ui', 'ui.uploader']);
 
 
-angular.module('dj-pop', ['dj-ui', 'ngAnimate']);
-
 angular.module('dj-form', ['dj-ui']);
+
+angular.module('dj-pop', ['dj-ui', 'ngAnimate']);
 
 angular.module('dj-ui', ['ngAnimate']);
 
+/**
+ * 动态表单组件
+ * ver: 0.1.0
+ * build: 2018-04-26
+ * power by LJH.
+ * 
+ * 子组件插座
+ */
+!function (window, angular, undefined) {
+
+  angular.module('dj-form').component('djFormItemHost', {
+    bindings: {
+      mode: '<', // edit(默认)/show
+      configs: '<',
+      initValue: '<',
+      onValueChange: '&',
+      onStatusChange: '&'
+    },
+    controller: ['$scope', '$element', '$timeout', '$q', '$compile', 'DjFormDefaultDefine', function ($scope, $element, $timeout, $q, $compile, DjFormDefaultDefine) {
+      var _this = this;
+
+      var theMode = false;
+      var theChanges = {};
+
+      this.$onChanges = function (changes) {
+        /** 首先，保存所有的参数传递 */
+        ['configs', 'initValue', 'onValueChange', 'onStatusChange'].map(function (name) {
+          if (changes[name]) {
+            theChanges[name] = changes[name];
+          }
+        });
+
+        /** 如果有 mode 改变，就初始化或重新初始化插座 */
+        if (changes.mode) {
+          var mode = changes.mode.currentValue;
+          //console.log("HOST mode =", mode);
+          if (mode != 'show') mode = 'edit';
+          if (mode != theMode) {
+            theMode = mode;
+            var fn = mode == "show" && ctrlHostShow || ctrlHostEdit;
+            fn.call(_this, $scope, $element, $timeout, $q, $compile, DjFormDefaultDefine);
+          }
+        }
+
+        /** 如果有 mode 数据，就响应参数传递 */
+        if (theMode) {
+          _this.onChangesCtrl(theChanges);
+          theChanges = {};
+        }
+      };
+    }]
+  });
+
+  /**
+   * 可编辑插座
+   */
+  function ctrlHostEdit($scope, $element, $timeout, $q, $compile, DjFormDefaultDefine) {
+    var _this2 = this;
+
+    /** 编译生成动态子表单项 */
+    function compileConfigs(configs) {
+      if (!configs) {
+        $element.html("");
+        return;
+      }
+      var eleType = configs.type || 'input';
+      var eleName = configs.pre + eleType;
+      var css = configs.css.hostEdit || configs.css.host || '';
+      var template = '\n        <' + eleName + '\n          class="' + css + ' {{dirty&&\'ng-dirty\'||\'\'}} {{!theValid.valid&&\'ng-invalid\'||\'\'}}"\n          configs="$ctrl.configs"\n          init-value="initValue"\n          on-change="onChange(value)"\n          invalid-text="theValid.tip"\n          dj-require="theValid.require"\n          dj-valid="theValid.valid"\n          dj-dirty="theValid.dirty"\n        ></' + eleName + '>\n      ';
+      $element.html(template);
+      var childElement = $compile($element.contents())($scope);
+      var childScope = $scope.$$childHead;
+      var childTemplate = configs.template || DjFormDefaultDefine.getTemplateEdit(eleType);
+      childElement.html(childTemplate);
+      $compile(childElement.contents())(childScope);
+    };
+
+    /** 数据校验 */
+    var theValid = $scope.theValid = {
+      valid: true,
+      require: false,
+      tip: "", //错误提示
+
+      configs: false,
+      configReady: false,
+      value: "", // 总是
+      valueReady: false,
+      setConfig: function setConfig(configs) {
+        // console.log("数据校验, configs = ", configs);
+        if (!configs) return;
+        theValid.configs = configs;
+        theValid.configReady = true;
+        theValid.calc();
+      },
+      /** 复制数据到本对象，同时复制到$scope.initValue */
+      setValue: function setValue(value) {
+        if (theValid.valueReady && angular.equals(theValid.value, value)) return false;
+        theValid.valueReady = true;
+        if (angular.isArray(value)) {
+          theValid.value = angular.merge([], value);
+          $scope.initValue = angular.merge([], value);
+        } else if (angular.isObject(value)) {
+          theValid.value = angular.merge({}, value);
+          $scope.initValue = angular.merge({}, value);
+        } else {
+          theValid.value = value;
+          $scope.initValue = value;
+        }
+        theValid.calc();
+        return true;
+      },
+      /** 计算，验证数据是否有效，同时，设置提示文本 */
+      calc: function calc() {
+        if (!theValid.configReady || !theValid.valueReady) return;
+        var valid = theValid.configs.param && theValid.configs.param.valid || theValid.configs.valid || {};
+
+        var invalid = angular.extend({ required: "不可为空" }, theValid.configs.invalid);
+
+        if (valid.minLength) valid.minlength = valid.minlength || valid.minLength; // 允许名字兼容
+        if (valid.maxLength) valid.maxlength = valid.maxlength || valid.maxLength; // 允许名字兼容
+
+        /** 先假定数据有效，然后再验证 */
+        theValid.valid = true;
+        theValid.tip = "";
+        theValid.require = valid.require;
+        /** 开始验证 */
+        if (valid.require) {
+          if (!theValid.value && theValid.value !== 0) {
+            theValid.valid = false;
+            theValid.tip = invalid.required || valid.errorTip || "";
+            return;
+          }
+        }
+        // 不要求输入，且值为空，就不检查了
+        else {
+            if (!theValid.value && theValid.value !== 0) {
+              return;
+            }
+          }
+        if (valid.pattern) {
+          if (!(valid.pattern instanceof RegExp)) {
+            valid.pattern = new RegExp(valid.pattern);
+          }
+          if (!valid.pattern.test(theValid.value)) {
+            theValid.valid = false;
+            theValid.tip = invalid.pattern || valid.errorTip || "";
+            return;
+          }
+        }
+        if (valid.max) {
+          var not_number = _typeof(theValid.value) == "object" || Number.isNaN(Number(theValid.value));
+          var error = not_number || +theValid.value > valid.max;
+          if (error) {
+            theValid.valid = false;
+            theValid.tip = (not_number ? invalid.number : invalid.max) || valid.errorTip || "";
+            return;
+          }
+        }
+        if (valid.min) {
+          var not_number = _typeof(theValid.value) == "object" || Number.isNaN(Number(theValid.value));
+          var error = not_number || +theValid.value < valid.min;
+          if (error) {
+            theValid.valid = false;
+            theValid.tip = (not_number ? invalid.number : invalid.min) || valid.errorTip || "";
+            return;
+          }
+        }
+        if (valid.maxlength) {
+          var v = theValid.value || '';
+          var error = !v.hasOwnProperty('length') || v.length > valid.maxlength;
+          if (error) {
+            theValid.valid = false;
+            theValid.tip = invalid.maxlength || valid.errorTip || "";
+            return;
+          }
+        }
+        if (valid.minlength) {
+          var v = theValid.value || '';
+          var error = !v.hasOwnProperty('length') || v.length < valid.minlength;
+          if (error) {
+            theValid.valid = false;
+            theValid.tip = invalid.minlength || valid.errorTip || "";
+            return;
+          }
+        }
+      }
+    };
+
+    /** 响应参数传递 */
+    this.onChangesCtrl = function (changes) {
+      if (changes.initValue) {
+        theValid.setValue(changes.initValue.currentValue);
+        $scope.valid = '----';
+        syncStatus(false).then(emitStatus);
+      }
+      if (changes.configs) {
+        compileConfigs(changes.configs.currentValue);
+        theValid.setConfig(changes.configs.currentValue);
+        $scope.valid = '----';
+        syncStatus(false).then(emitStatus);
+      }
+    };
+
+    /** 状态，及其初始化 */
+    $scope.valid = true;
+    $scope.dirty = false;
+    function syncStatus(dirty) {
+      var valid = theValid.valid;
+      if (valid === $scope.valid && dirty === $scope.dirty) {
+        return $q.reject('状态未改变');
+      }
+      $scope.valid = valid;
+      $scope.dirty = dirty;
+      //console.log('状态改变 valid=', valid, ', dirty=', dirty)
+      return $q.when({ valid: valid, dirty: dirty });
+    }
+    var emitStatus = function emitStatus(status) {
+      _this2.onStatusChange && _this2.onStatusChange({
+        item: _this2.configs,
+        valid: status.valid,
+        dirty: status.dirty
+      });
+    };
+
+    /** 下级值改变事件 */
+    $scope.onChange = function (value) {
+      if (!theValid.setValue(value)) {
+        //console.log('下级值事件，值未变 插座', value);
+        return;
+      }
+      //console.log('收到值改变 插座', value);
+      syncStatus(true).then(emitStatus).finally(function () {
+        _this2.onValueChange({
+          item: _this2.configs,
+          value: value,
+          valid: $scope.valid,
+          dirty: $scope.dirty
+        });
+      });
+    };
+  }
+
+  /**
+   * 只读插座
+   */
+  function ctrlHostShow($scope, $element, $timeout, $q, $compile, DjFormDefaultDefine) {
+
+    this.onChangesCtrl = function (changes) {
+      if (changes.configs) $scope.configs = changes.configs.currentValue;
+      if (changes.initValue) $scope.value = changes.initValue.currentValue;
+      compileConfigs($scope.configs, $scope.value);
+    };
+
+    /** 编译生成动态子表单项 */
+    function compileConfigs(configs, value) {
+      //console.log("HOST 编译 ", configs, value);
+      if (!configs) {
+        $element.html("");
+        return;
+      }
+      /** 一些自动隐藏 */
+      if (configs.show) {
+        if (configs.show.autohide == 'empty' && value !== 0 && !value) {
+          $element.html("");
+          return;
+        }
+        if (configs.show.autohide == 'zero length' && !(value && value.length)) {
+          $element.html("");
+          return;
+        }
+      }
+
+      /** 开始编译子组件 */
+      var eleType = configs.type || 'input';
+      var eleName = configs.pre + eleType;
+      var css = configs.css.hostShow || configs.css.host || '';
+      var template = '\n        <' + eleName + '-show\n          class="' + css + '"\n          configs="$ctrl.configs"\n          init-value="$ctrl.initValue"\n        ></' + eleName + '-show>\n      ';
+      $element.html(template);
+      var childElement = $compile($element.contents())($scope);
+      var childScope = $scope.$$childHead;
+      var childTemplate = configs.template || DjFormDefaultDefine.getTemplateShow(eleType);
+      childElement.html(childTemplate);
+      $compile(childElement.contents())(childScope);
+    };
+  }
+}(window, angular);
+/**
+ * 动态表单组件
+ * ver: 0.1.1
+ * build: 2018-05-06
+ * power by LJH.
+ */
+!function (window, angular, undefined) {
+  var DJ_FORM_DEFAULT = {
+    pre: "dj-form-default-item-"
+  };
+  angular.module('dj-form').value("DJ_FORM_DEFAULT", DJ_FORM_DEFAULT);
+
+  angular.module('dj-form').component('djForm', {
+    bindings: {
+      mode: '<', // edit(默认)/show
+      configs: '<',
+      initValues: '<',
+      onFormValues: '&',
+      onFormStatus: '&'
+    },
+    template: '\n      <dj-form-item-host class="{{$ctrl.configs.css.host || \'flex-v\'}} {{$ctrl.configs.css.host2}} mode-{{mode}}"\n        mode="mode==\'show\' && \'show\' || subItem.mode"\n        configs="subItem"\n        init-value="memValue[subItem.name]"\n        on-status-change="onItemStatusChange(item, valid, dirty)"\n        on-value-change="onItemValueChange(item, value, valid, dirty)"\n        ng-repeat="subItem in configItems track by $index"\n        ng-if="!stop"\n      ></dj-form-item>',
+    controller: ['$scope', '$element', '$timeout', '$q', 'DjWaiteReady', function ($scope, $element, $timeout, $q, DjWaiteReady) {
+      var _this3 = this;
+
+      var theMode = false;
+      var theChanges = {};
+
+      $scope.stop = true;
+
+      this.$onChanges = function (changes) {
+        /** 首先，保存所有的参数传递 */
+        ['configs', 'initValues', 'onFormValues', 'onFormStatus'].map(function (name) {
+          if (changes[name]) {
+            theChanges[name] = changes[name];
+          }
+        });
+
+        /** 如果有 mode 改变，就初始化或重新初始化插座 */
+        if (changes.mode) {
+          var mode = changes.mode.currentValue;
+          if (mode != 'show') mode = 'edit';
+          if (mode != theMode) {
+            theMode = $scope.mode = mode;
+            $scope.stop = true;
+            var theValue = $scope.memValue || {};
+            console.log("有 mode 改变: ", theMode, " => ", mode, ", memValue=", theValue);
+            if (!theChanges.configs) theChanges.configs = {};
+            if (!theChanges.configs.currentValue) theChanges.configs.currentValue = $scope.configs;
+            if (!theChanges.initValues) theChanges.initValues = {};
+            if (!theChanges.initValues.currentValue) theChanges.initValues.currentValue = theValue;
+            $timeout(function () {
+              $scope.stop = false;
+              var fn = mode == "show" && ctrlHostShow || ctrlHostEdit;
+              fn.call(_this3, $scope, $element, $timeout, $q, DjWaiteReady);
+              _this3.onChangesCtrl(theChanges);
+              theChanges = {};
+            });
+          }
+        }
+
+        /** 如果有 mode 数据，就响应参数传递 */
+        if (theMode && _this3.onChangesCtrl) {
+          $timeout(function () {
+            _this3.onChangesCtrl(theChanges);
+            theChanges = {};
+          });
+        }
+      };
+    }]
+  });
+
+  function ctrlHostEdit($scope, $element, $timeout, $q, DjWaiteReady) {
+    var _this4 = this;
+
+    var configReady = new DjWaiteReady();
+
+    this.onChangesCtrl = function (changes) {
+      if (changes.configs) {
+        $scope.configs = changes.configs.currentValue;
+        initConfigs(changes.configs.currentValue);
+      }
+      if (changes.initValues) {
+        initValues(changes.initValues.currentValue);
+      }
+    };
+
+    /**
+     * 数据初始化
+     */
+    $scope.memValue = {};
+    function initValues(vNew) {
+      $scope.memValue = {};
+      if ((typeof vNew === 'undefined' ? 'undefined' : _typeof(vNew)) === 'object') {
+        /** 在配置初始化后，执行 */
+        configReady.ready(function (configs) {
+          for (var k in vNew) {
+            // 在配置中有的名称，才初始化数据
+            if (configs.items.find(function (item) {
+              return item.name == k;
+            })) {
+              $scope.memValue[k] = vNew[k];
+            }
+          }
+        });
+      }
+    }
+
+    /**
+     * 初始化配置
+     */
+    function initConfigs(vNew) {
+      //console.log("Form 初始化配置 ", vNew);
+      itemValid = {};
+      itemDirty = {};
+      if (!vNew) return;
+      var templates = vNew.templates || {};
+      var pre = vNew.pre || DJ_FORM_DEFAULT.pre;
+      var css = vNew.css || {};
+      $scope.configItems = vNew.items.map(function (item) {
+        return angular.extend({ pre: pre, css: css, template: templates[item.type] }, item);
+      });
+      /** 通知配置已初始化 */
+      vNew && configReady.resolve(vNew);
+    };
+
+    /**
+     * 子组件事件接收
+     */
+    $scope.valid = true;
+    $scope.dirty = false;
+    var itemValid = {}; // 各子组件是否有效
+    var itemDirty = {}; // 各子组件是否改变
+    $scope.onItemStatusChange = function (item, valid, dirty) {
+      itemValid[item.name] = valid;
+      itemDirty[item.name] = dirty;
+      $scope.valid = !Object.keys(itemValid).find(function (name) {
+        return !itemValid[name];
+      });
+      $scope.dirty = !!Object.keys(itemDirty).find(function (name) {
+        return itemDirty[name];
+      });
+      $timeout(notifyParentStatus);
+    };
+
+    /**
+     * 全局状态监听和通知
+     */
+    var oldStatus = {};
+    var notifyParentStatus = function notifyParentStatus() {
+      if ($scope.valid === oldStatus.valid && $scope.dirty === oldStatus.dirty) return;
+      oldStatus.valid = $scope.valid;
+      oldStatus.dirty = $scope.dirty;
+      /** 通知父组件: 表单状态改变 */
+      _this4.onFormStatus && _this4.onFormStatus({
+        valid: $scope.valid,
+        dirty: $scope.dirty
+      });
+    };
+
+    /**
+     * 值改变事件接收
+     */
+    $scope.onItemValueChange = function (item, value, valid, dirty) {
+      //console.log('收到值改变 djForm', item, value, valid, dirty);
+      $scope.onItemStatusChange(item, valid, dirty);
+      $scope.memValue[item.name] = value;
+      /** 通知父组件: 表单数据改变 */
+      _this4.onFormValues && _this4.onFormValues({
+        value: $scope.memValue,
+        valid: $scope.valid,
+        dirty: $scope.dirty,
+        item: item
+      });
+    };
+  }
+
+  function ctrlHostShow($scope) {
+    this.onChangesCtrl = function (changes) {
+      if (changes.configs) $scope.configs = changes.configs.currentValue;
+      if (changes.initValues) $scope.memValue = changes.initValues.currentValue;
+      if (changes.configs || changes.initValues) {
+        initConfigs($scope.configs, $scope.memValue);
+      }
+    };
+    /**
+     * 初始化配置
+     * 首次 configs 和 values 数据到来时，编译
+     * 以后，configs 变化时，重新编译; values 变化时，仅传递数据
+     */
+    function initConfigs(configs, values) {
+      if (!configs || !values) return;
+      var templates = configs.templates || {};
+      var pre = configs.pre || DJ_FORM_DEFAULT.pre;
+      var css = configs.css || {};
+      $scope.configItems = configs.items.map(function (item) {
+        return angular.extend({ pre: pre, css: css, template: templates[item.type + "-show"] }, item);
+      });
+    };
+
+    /**
+     * 不接收事件
+     */
+    $scope.onItemStatusChange = function () {};
+    $scope.onItemValueChange = function () {};
+  }
+}(window, angular);
 !function (window, angular, undefined) {
 
   var theModule = angular.module('dj-pop');
@@ -21,7 +513,7 @@ angular.module('dj-ui', ['ngAnimate']);
       param: '<'
     },
     controller: ["$scope", "$element", "$compile", function ($scope, $element, $compile) {
-      var _this = this;
+      var _this5 = this;
 
       $scope.ZZZ = "DJ_POP";
       this.$onChanges = function (changes) {
@@ -30,11 +522,11 @@ angular.module('dj-ui', ['ngAnimate']);
           return;
         }
         if (changes.component) {
-          compile(changes.component.currentValue, _this.param);
+          compile(changes.component.currentValue, _this5.param);
           return;
         }
         if (changes.param) {
-          compile(_this.component, changes.param.currentValue);
+          compile(_this5.component, changes.param.currentValue);
           return;
         }
       };
@@ -248,574 +740,6 @@ angular.module('dj-ui', ['ngAnimate']);
       toast: toast,
       gallery: gallery
     };
-  }]);
-}(window, angular);
-/**
- * 动态表单组件
- * ver: 0.1.0
- * build: 2018-04-26
- * power by LJH.
- * 
- * 子组件插座
- */
-!function (window, angular, undefined) {
-
-  angular.module('dj-form').component('djFormItemHost', {
-    bindings: {
-      mode: '<', // edit(默认)/show
-      configs: '<',
-      initValue: '<',
-      onValueChange: '&',
-      onStatusChange: '&'
-    },
-    controller: ['$scope', '$element', '$timeout', '$q', '$compile', 'DjFormDefaultDefine', function ($scope, $element, $timeout, $q, $compile, DjFormDefaultDefine) {
-      var _this2 = this;
-
-      var theMode = false;
-      var theChanges = {};
-
-      this.$onChanges = function (changes) {
-        /** 首先，保存所有的参数传递 */
-        ['configs', 'initValue', 'onValueChange', 'onStatusChange'].map(function (name) {
-          if (changes[name]) {
-            theChanges[name] = changes[name];
-          }
-        });
-
-        /** 如果有 mode 改变，就初始化或重新初始化插座 */
-        if (changes.mode) {
-          var mode = changes.mode.currentValue;
-          //console.log("HOST mode =", mode);
-          if (mode != 'show') mode = 'edit';
-          if (mode != theMode) {
-            theMode = mode;
-            var fn = mode == "show" && ctrlHostShow || ctrlHostEdit;
-            fn.call(_this2, $scope, $element, $timeout, $q, $compile, DjFormDefaultDefine);
-          }
-        }
-
-        /** 如果有 mode 数据，就响应参数传递 */
-        if (theMode) {
-          _this2.onChangesCtrl(theChanges);
-          theChanges = {};
-        }
-      };
-    }]
-  });
-
-  /**
-   * 可编辑插座
-   */
-  function ctrlHostEdit($scope, $element, $timeout, $q, $compile, DjFormDefaultDefine) {
-    var _this3 = this;
-
-    /** 编译生成动态子表单项 */
-    function compileConfigs(configs) {
-      if (!configs) {
-        $element.html("");
-        return;
-      }
-      var eleType = configs.type || 'input';
-      var eleName = configs.pre + eleType;
-      var css = configs.css.hostEdit || configs.css.host || '';
-      var template = '\n        <' + eleName + '\n          class="' + css + ' {{dirty&&\'ng-dirty\'||\'\'}} {{!theValid.valid&&\'ng-invalid\'||\'\'}}"\n          configs="$ctrl.configs"\n          init-value="initValue"\n          on-change="onChange(value)"\n          invalid-text="theValid.tip"\n          dj-require="theValid.require"\n          dj-valid="theValid.valid"\n          dj-dirty="theValid.dirty"\n        ></' + eleName + '>\n      ';
-      $element.html(template);
-      var childElement = $compile($element.contents())($scope);
-      var childScope = $scope.$$childHead;
-      var childTemplate = configs.template || DjFormDefaultDefine.getTemplateEdit(eleType);
-      childElement.html(childTemplate);
-      $compile(childElement.contents())(childScope);
-    };
-
-    /** 数据校验 */
-    var theValid = $scope.theValid = {
-      valid: true,
-      require: false,
-      tip: "", //错误提示
-
-      configs: false,
-      configReady: false,
-      value: "", // 总是
-      valueReady: false,
-      setConfig: function setConfig(configs) {
-        // console.log("数据校验, configs = ", configs);
-        if (!configs) return;
-        theValid.configs = configs;
-        theValid.configReady = true;
-        theValid.calc();
-      },
-      /** 复制数据到本对象，同时复制到$scope.initValue */
-      setValue: function setValue(value) {
-        if (theValid.valueReady && angular.equals(theValid.value, value)) return false;
-        theValid.valueReady = true;
-        if (angular.isArray(value)) {
-          theValid.value = angular.merge([], value);
-          $scope.initValue = angular.merge([], value);
-        } else if (angular.isObject(value)) {
-          theValid.value = angular.merge({}, value);
-          $scope.initValue = angular.merge({}, value);
-        } else {
-          theValid.value = value;
-          $scope.initValue = value;
-        }
-        theValid.calc();
-        return true;
-      },
-      /** 计算，验证数据是否有效，同时，设置提示文本 */
-      calc: function calc() {
-        if (!theValid.configReady || !theValid.valueReady) return;
-        var valid = theValid.configs.param && theValid.configs.param.valid || theValid.configs.valid || {};
-
-        var invalid = angular.extend({ required: "不可为空" }, theValid.configs.invalid);
-
-        if (valid.minLength) valid.minlength = valid.minlength || valid.minLength; // 允许名字兼容
-        if (valid.maxLength) valid.maxlength = valid.maxlength || valid.maxLength; // 允许名字兼容
-
-        /** 先假定数据有效，然后再验证 */
-        theValid.valid = true;
-        theValid.tip = "";
-        theValid.require = valid.require;
-        /** 开始验证 */
-        if (valid.require) {
-          if (!theValid.value && theValid.value !== 0) {
-            theValid.valid = false;
-            theValid.tip = invalid.required || valid.errorTip || "";
-            return;
-          }
-        }
-        // 不要求输入，且值为空，就不检查了
-        else {
-            if (!theValid.value && theValid.value !== 0) {
-              return;
-            }
-          }
-        if (valid.pattern) {
-          if (!(valid.pattern instanceof RegExp)) {
-            valid.pattern = new RegExp(valid.pattern);
-          }
-          if (!valid.pattern.test(theValid.value)) {
-            theValid.valid = false;
-            theValid.tip = invalid.pattern || valid.errorTip || "";
-            return;
-          }
-        }
-        if (valid.max) {
-          var not_number = _typeof(theValid.value) == "object" || Number.isNaN(Number(theValid.value));
-          var error = not_number || +theValid.value > valid.max;
-          if (error) {
-            theValid.valid = false;
-            theValid.tip = (not_number ? invalid.number : invalid.max) || valid.errorTip || "";
-            return;
-          }
-        }
-        if (valid.min) {
-          var not_number = _typeof(theValid.value) == "object" || Number.isNaN(Number(theValid.value));
-          var error = not_number || +theValid.value < valid.min;
-          if (error) {
-            theValid.valid = false;
-            theValid.tip = (not_number ? invalid.number : invalid.min) || valid.errorTip || "";
-            return;
-          }
-        }
-        if (valid.maxlength) {
-          var v = theValid.value || '';
-          var error = !v.hasOwnProperty('length') || v.length > valid.maxlength;
-          if (error) {
-            theValid.valid = false;
-            theValid.tip = invalid.maxlength || valid.errorTip || "";
-            return;
-          }
-        }
-        if (valid.minlength) {
-          var v = theValid.value || '';
-          var error = !v.hasOwnProperty('length') || v.length < valid.minlength;
-          if (error) {
-            theValid.valid = false;
-            theValid.tip = invalid.minlength || valid.errorTip || "";
-            return;
-          }
-        }
-      }
-    };
-
-    /** 响应参数传递 */
-    this.onChangesCtrl = function (changes) {
-      if (changes.initValue) {
-        theValid.setValue(changes.initValue.currentValue);
-        $scope.valid = '----';
-        syncStatus(false).then(emitStatus);
-      }
-      if (changes.configs) {
-        compileConfigs(changes.configs.currentValue);
-        theValid.setConfig(changes.configs.currentValue);
-        $scope.valid = '----';
-        syncStatus(false).then(emitStatus);
-      }
-    };
-
-    /** 状态，及其初始化 */
-    $scope.valid = true;
-    $scope.dirty = false;
-    function syncStatus(dirty) {
-      var valid = theValid.valid;
-      if (valid === $scope.valid && dirty === $scope.dirty) {
-        return $q.reject('状态未改变');
-      }
-      $scope.valid = valid;
-      $scope.dirty = dirty;
-      //console.log('状态改变 valid=', valid, ', dirty=', dirty)
-      return $q.when({ valid: valid, dirty: dirty });
-    }
-    var emitStatus = function emitStatus(status) {
-      _this3.onStatusChange && _this3.onStatusChange({
-        item: _this3.configs,
-        valid: status.valid,
-        dirty: status.dirty
-      });
-    };
-
-    /** 下级值改变事件 */
-    $scope.onChange = function (value) {
-      if (!theValid.setValue(value)) {
-        //console.log('下级值事件，值未变 插座', value);
-        return;
-      }
-      //console.log('收到值改变 插座', value);
-      syncStatus(true).then(emitStatus).finally(function () {
-        _this3.onValueChange({
-          item: _this3.configs,
-          value: value,
-          valid: $scope.valid,
-          dirty: $scope.dirty
-        });
-      });
-    };
-  }
-
-  /**
-   * 只读插座
-   */
-  function ctrlHostShow($scope, $element, $timeout, $q, $compile, DjFormDefaultDefine) {
-
-    this.onChangesCtrl = function (changes) {
-      if (changes.configs) $scope.configs = changes.configs.currentValue;
-      if (changes.initValue) $scope.value = changes.initValue.currentValue;
-      compileConfigs($scope.configs, $scope.value);
-    };
-
-    /** 编译生成动态子表单项 */
-    function compileConfigs(configs, value) {
-      //console.log("HOST 编译 ", configs, value);
-      if (!configs) {
-        $element.html("");
-        return;
-      }
-      /** 一些自动隐藏 */
-      if (configs.show) {
-        if (configs.show.autohide == 'empty' && value !== 0 && !value) {
-          $element.html("");
-          return;
-        }
-        if (configs.show.autohide == 'zero length' && !(value && value.length)) {
-          $element.html("");
-          return;
-        }
-      }
-
-      /** 开始编译子组件 */
-      var eleType = configs.type || 'input';
-      var eleName = configs.pre + eleType;
-      var css = configs.css.hostShow || configs.css.host || '';
-      var template = '\n        <' + eleName + '-show\n          class="' + css + '"\n          configs="$ctrl.configs"\n          init-value="$ctrl.initValue"\n        ></' + eleName + '-show>\n      ';
-      $element.html(template);
-      var childElement = $compile($element.contents())($scope);
-      var childScope = $scope.$$childHead;
-      var childTemplate = configs.template || DjFormDefaultDefine.getTemplateShow(eleType);
-      childElement.html(childTemplate);
-      $compile(childElement.contents())(childScope);
-    };
-  }
-}(window, angular);
-/**
- * 动态表单组件
- * ver: 0.1.1
- * build: 2018-05-06
- * power by LJH.
- */
-!function (window, angular, undefined) {
-  var DJ_FORM_DEFAULT = {
-    pre: "dj-form-default-item-"
-  };
-  angular.module('dj-form').value("DJ_FORM_DEFAULT", DJ_FORM_DEFAULT);
-
-  angular.module('dj-form').component('djForm', {
-    bindings: {
-      mode: '<', // edit(默认)/show
-      configs: '<',
-      initValues: '<',
-      onFormValues: '&',
-      onFormStatus: '&'
-    },
-    template: '\n      <dj-form-item-host class="{{$ctrl.configs.css.host || \'flex-v\'}} {{$ctrl.configs.css.host2}} mode-{{mode}}"\n        mode="mode==\'show\' && \'show\' || subItem.mode"\n        configs="subItem"\n        init-value="memValue[subItem.name]"\n        on-status-change="onItemStatusChange(item, valid, dirty)"\n        on-value-change="onItemValueChange(item, value, valid, dirty)"\n        ng-repeat="subItem in configItems track by $index"\n        ng-if="!stop"\n      ></dj-form-item>',
-    controller: ['$scope', '$element', '$timeout', '$q', 'DjWaiteReady', function ($scope, $element, $timeout, $q, DjWaiteReady) {
-      var _this4 = this;
-
-      var theMode = false;
-      var theChanges = {};
-
-      $scope.stop = true;
-
-      this.$onChanges = function (changes) {
-        /** 首先，保存所有的参数传递 */
-        ['configs', 'initValues', 'onFormValues', 'onFormStatus'].map(function (name) {
-          if (changes[name]) {
-            theChanges[name] = changes[name];
-          }
-        });
-
-        /** 如果有 mode 改变，就初始化或重新初始化插座 */
-        if (changes.mode) {
-          var mode = changes.mode.currentValue;
-          if (mode != 'show') mode = 'edit';
-          if (mode != theMode) {
-            theMode = $scope.mode = mode;
-            $scope.stop = true;
-            var theValue = $scope.memValue || {};
-            console.log("有 mode 改变: ", theMode, " => ", mode, ", memValue=", theValue);
-            if (!theChanges.configs) theChanges.configs = {};
-            if (!theChanges.configs.currentValue) theChanges.configs.currentValue = $scope.configs;
-            if (!theChanges.initValues) theChanges.initValues = {};
-            if (!theChanges.initValues.currentValue) theChanges.initValues.currentValue = theValue;
-            $timeout(function () {
-              $scope.stop = false;
-              var fn = mode == "show" && ctrlHostShow || ctrlHostEdit;
-              fn.call(_this4, $scope, $element, $timeout, $q, DjWaiteReady);
-              _this4.onChangesCtrl(theChanges);
-              theChanges = {};
-            });
-          }
-        }
-
-        /** 如果有 mode 数据，就响应参数传递 */
-        if (theMode && _this4.onChangesCtrl) {
-          $timeout(function () {
-            _this4.onChangesCtrl(theChanges);
-            theChanges = {};
-          });
-        }
-      };
-    }]
-  });
-
-  function ctrlHostEdit($scope, $element, $timeout, $q, DjWaiteReady) {
-    var _this5 = this;
-
-    var configReady = new DjWaiteReady();
-
-    this.onChangesCtrl = function (changes) {
-      if (changes.configs) {
-        $scope.configs = changes.configs.currentValue;
-        initConfigs(changes.configs.currentValue);
-      }
-      if (changes.initValues) {
-        initValues(changes.initValues.currentValue);
-      }
-    };
-
-    /**
-     * 数据初始化
-     */
-    $scope.memValue = {};
-    function initValues(vNew) {
-      $scope.memValue = {};
-      if ((typeof vNew === 'undefined' ? 'undefined' : _typeof(vNew)) === 'object') {
-        /** 在配置初始化后，执行 */
-        configReady.ready(function (configs) {
-          for (var k in vNew) {
-            // 在配置中有的名称，才初始化数据
-            if (configs.items.find(function (item) {
-              return item.name == k;
-            })) {
-              $scope.memValue[k] = vNew[k];
-            }
-          }
-        });
-      }
-    }
-
-    /**
-     * 初始化配置
-     */
-    function initConfigs(vNew) {
-      //console.log("Form 初始化配置 ", vNew);
-      itemValid = {};
-      itemDirty = {};
-      if (!vNew) return;
-      var templates = vNew.templates || {};
-      var pre = vNew.pre || DJ_FORM_DEFAULT.pre;
-      var css = vNew.css || {};
-      $scope.configItems = vNew.items.map(function (item) {
-        return angular.extend({ pre: pre, css: css, template: templates[item.type] }, item);
-      });
-      /** 通知配置已初始化 */
-      vNew && configReady.resolve(vNew);
-    };
-
-    /**
-     * 子组件事件接收
-     */
-    $scope.valid = true;
-    $scope.dirty = false;
-    var itemValid = {}; // 各子组件是否有效
-    var itemDirty = {}; // 各子组件是否改变
-    $scope.onItemStatusChange = function (item, valid, dirty) {
-      itemValid[item.name] = valid;
-      itemDirty[item.name] = dirty;
-      $scope.valid = !Object.keys(itemValid).find(function (name) {
-        return !itemValid[name];
-      });
-      $scope.dirty = !!Object.keys(itemDirty).find(function (name) {
-        return itemDirty[name];
-      });
-      $timeout(notifyParentStatus);
-    };
-
-    /**
-     * 全局状态监听和通知
-     */
-    var oldStatus = {};
-    var notifyParentStatus = function notifyParentStatus() {
-      if ($scope.valid === oldStatus.valid && $scope.dirty === oldStatus.dirty) return;
-      oldStatus.valid = $scope.valid;
-      oldStatus.dirty = $scope.dirty;
-      /** 通知父组件: 表单状态改变 */
-      _this5.onFormStatus && _this5.onFormStatus({
-        valid: $scope.valid,
-        dirty: $scope.dirty
-      });
-    };
-
-    /**
-     * 值改变事件接收
-     */
-    $scope.onItemValueChange = function (item, value, valid, dirty) {
-      //console.log('收到值改变 djForm', item, value, valid, dirty);
-      $scope.onItemStatusChange(item, valid, dirty);
-      $scope.memValue[item.name] = value;
-      /** 通知父组件: 表单数据改变 */
-      _this5.onFormValues && _this5.onFormValues({
-        value: $scope.memValue,
-        valid: $scope.valid,
-        dirty: $scope.dirty,
-        item: item
-      });
-    };
-  }
-
-  function ctrlHostShow($scope) {
-    this.onChangesCtrl = function (changes) {
-      if (changes.configs) $scope.configs = changes.configs.currentValue;
-      if (changes.initValues) $scope.memValue = changes.initValues.currentValue;
-      if (changes.configs || changes.initValues) {
-        initConfigs($scope.configs, $scope.memValue);
-      }
-    };
-    /**
-     * 初始化配置
-     * 首次 configs 和 values 数据到来时，编译
-     * 以后，configs 变化时，重新编译; values 变化时，仅传递数据
-     */
-    function initConfigs(configs, values) {
-      if (!configs || !values) return;
-      var templates = configs.templates || {};
-      var pre = configs.pre || DJ_FORM_DEFAULT.pre;
-      var css = configs.css || {};
-      $scope.configItems = configs.items.map(function (item) {
-        return angular.extend({ pre: pre, css: css, template: templates[item.type + "-show"] }, item);
-      });
-    };
-
-    /**
-     * 不接收事件
-     */
-    $scope.onItemStatusChange = function () {};
-    $scope.onItemValueChange = function () {};
-  }
-}(window, angular);
-/**
- * 数据等待类
-
-   var dataNeedReady = new DjWaiteReaddy();
-
-   ...
-
-   dataNeedReady.ready(data =>{
-     // this will run after dataNeedReady.resolve fun called.
-     // data ready now!
-   })
-
-   ...
-
-   dataNeedReady.resolve('这是备妥的数据！'); //
-
- */
-!function (window, angular, undefined) {
-
-  var serviceModule = angular.module('dj-ui');
-
-  serviceModule.factory('DjWaiteReady', ['$q', function ($q) {
-
-    function DjWaiteReady() {
-      this._isReady = false;
-      this.deferred = $q.defer();
-      this.promise = this.deferred.promise;
-    }
-
-    DjWaiteReady.prototype = {
-      /**
-       * 数据是否已备妥
-       */
-      get isReady() {
-        return this._isReady;
-      },
-      /**
-       * 通知数据已备妥。 首次调用时通知，以后，只更新数据
-       * @param data 已备妥的数据
-       */
-      resolve: function resolve(data) {
-        if (!this.isReady) {
-          this.deferred.resolve(data);
-          this._isReady = true;
-        }
-        this.promise = data;
-      },
-
-      /**
-       * 通知数据已备妥(拒绝)。 首次调用时通知，以后，只更新数据
-       * @param data 已拒绝的原因
-       */
-      reject: function reject(reason) {
-        if (!this.isReady) {
-          this.deferred.reject(reason);
-        }
-        this._isReady = 'reject';
-        this.promise = reason;
-      },
-
-      /**
-       * 等待数据备妥承诺
-       * @param func 兑现回调函数。承诺兑现时，调用本函数，并传递备妥的数据
-       */
-      ready: function ready(fn) {
-        if (this._isReady == 'reject') {
-          return $q.reject(this.promise);
-        }
-        fn && $q.when(this.promise).then(fn);
-        return $q.when(this.promise);
-      }
-    };
-
-    return DjWaiteReady;
   }]);
 }(window, angular);
 
@@ -1057,6 +981,498 @@ angular.module('dj-ui', ['ngAnimate']);
     }]
   });
 }(window, angular);
+/**
+ * 数据等待类
+
+   var dataNeedReady = new DjWaiteReaddy();
+
+   ...
+
+   dataNeedReady.ready(data =>{
+     // this will run after dataNeedReady.resolve fun called.
+     // data ready now!
+   })
+
+   ...
+
+   dataNeedReady.resolve('这是备妥的数据！'); //
+
+ */
+!function (window, angular, undefined) {
+
+  var serviceModule = angular.module('dj-ui');
+
+  serviceModule.factory('DjWaiteReady', ['$q', function ($q) {
+
+    function DjWaiteReady() {
+      this._isReady = false;
+      this.deferred = $q.defer();
+      this.promise = this.deferred.promise;
+    }
+
+    DjWaiteReady.prototype = {
+      /**
+       * 数据是否已备妥
+       */
+      get isReady() {
+        return this._isReady;
+      },
+      /**
+       * 通知数据已备妥。 首次调用时通知，以后，只更新数据
+       * @param data 已备妥的数据
+       */
+      resolve: function resolve(data) {
+        if (!this.isReady) {
+          this.deferred.resolve(data);
+          this._isReady = true;
+        }
+        this.promise = data;
+      },
+
+      /**
+       * 通知数据已备妥(拒绝)。 首次调用时通知，以后，只更新数据
+       * @param data 已拒绝的原因
+       */
+      reject: function reject(reason) {
+        if (!this.isReady) {
+          this.deferred.reject(reason);
+        }
+        this._isReady = 'reject';
+        this.promise = reason;
+      },
+
+      /**
+       * 等待数据备妥承诺
+       * @param func 兑现回调函数。承诺兑现时，调用本函数，并传递备妥的数据
+       */
+      ready: function ready(fn) {
+        if (this._isReady == 'reject') {
+          return $q.reject(this.promise);
+        }
+        fn && $q.when(this.promise).then(fn);
+        return $q.when(this.promise);
+      }
+    };
+
+    return DjWaiteReady;
+  }]);
+}(window, angular);
+/**
+ * 动态表单-所有子组件
+ * ver: 0.1.0
+ * build: 2018-04-26
+ * power by LJH.
+ */
+!function (window, angular, undefined) {
+  var DJ_FORM_DEFAULT = {
+    pre: "dj-form-default-item-"
+  };
+
+  var theModule = angular.module('dj-form');
+
+  /**
+   * 初始化下拉列表
+   * @param {*} param 要初始化列表的参数，false 表示用已有的数据(自己都忘了什么时候用false!，看看使用者吧)
+   */
+  function initDropdownList(param, $http, $q) {
+    if (param === false && initDropdownList.result) {
+      return $q.when(initDropdownList.result);
+    }
+    if (!param.list) return $q.when(initDropdownList.result = []);
+    if (angular.isString(param.list)) {
+      return $http.post('获取下拉列表/' + param.list, {}).then(function (json) {
+        console.log('获取下拉列表, json =', json);
+        return $q.when(initDropdownList.result = json.list);
+      }).catch(function (e) {
+        console.log('获取下拉列表, 失败: ', e);
+        return initDropdownList.result = $q.reject([]);
+      });
+    }
+    if (angular.isFunction(param.list)) {
+      return $q.when(initDropdownList.result = param.list());
+    }
+    return $q.when(initDropdownList.result = param.list);
+  }
+
+  var theControlers = {
+    /** 空的控制器 */
+    "empty": ['$scope', function ($scope) {}],
+
+    /** 一般的 input 绑定 */
+    "input": ['$scope', function ($scope) {
+      var _this9 = this;
+
+      this.$onChanges = function (changes) {
+        if (changes.initValue) {
+          $scope.value = changes.initValue.currentValue;
+        }
+      };
+      $scope.change = function (value) {
+        //console.log("ng-change", value);
+        _this9.onChange({ value: value });
+      };
+    }],
+
+    /** 一般的显示 */
+    "input-show": ['$scope', function ($scope) {
+      this.$onChanges = function (changes) {
+        if (changes.initValue) {
+          $scope.value = changes.initValue.currentValue;
+        }
+      };
+    }],
+
+    /** 下拉框 */
+    "dropdown": ["$scope", "$timeout", "$http", "$q", "DjWaiteReady", function ($scope, $timeout, $http, $q, DjWaiteReady) {
+      var _this10 = this;
+
+      var configReady = new DjWaiteReady();
+      $scope.value = '';
+      $scope.selected = '';
+      $scope.onToggle = function (open) {
+        $scope.focusInput = false;
+        open && $timeout(function () {
+          $scope.focusInput = true;
+        }, 50);
+      };
+      $scope.click = function (item) {
+        $scope.selected = item;
+        _this10.onChange({ value: item.value || item });
+      };
+      $scope.filter = function (searchText) {
+        if (!searchText) {
+          $scope.list = $scope.list_full;
+        } else {
+          var pattern = new RegExp(searchText.split('').join('\s*'), 'i');
+          $scope.list = $scope.list_full.filter(function (item) {
+            return pattern.test(item.value ? item.value + '-' + item.title : item);
+          });
+        }
+      };
+
+      this.$onChanges = function (changes) {
+        if (changes.configs) {
+          var configs = changes.configs.currentValue;
+          if (!configs || !configs.param) return;
+          //$scope.list = this.configs.param.list;
+          //$scope.list_full = this.configs.param.list;
+          //console.log('原下拉列表, list: ', $scope.list);
+          //console.log('组件,', this.configs.name, ",", $scope.id);
+          //$scope.list_full = this.configs.param.list;
+          $scope.searchMode = configs.param.searchMode;
+          /** 通知配置已初始化 */
+          initDropdownList(configs.param, $http, $q).then(function (list) {
+            $scope.list = $scope.list_full = list;
+            calcSelected();
+            configReady.resolve(configs);
+          }).catch(function (e) {
+            $scope.list = $scope.list_full = [];
+          });
+        }
+        if (changes.initValue) {
+          $scope.value = changes.initValue.currentValue;
+          configReady.ready(function (configs) {
+            // 不重新获取（当值初始化，或被上级再改变时）
+            initDropdownList(false).then(function (list) {
+              $scope.list = $scope.list_full = list;
+              calcSelected();
+            });
+          });
+        }
+      };
+
+      /**
+       * 根据 $scope.value 计算选中项
+       * 要求：list 已初始化
+       */
+      var calcSelected = function calcSelected() {
+        if (!$scope.list) return;
+        $scope.selected = $scope.list.find(function (item) {
+          return (item.value || item) == $scope.value;
+        });
+      };
+    }],
+
+    /** 下拉框 - 显示 */
+    "dropdown-show": ["$scope", "$timeout", "$http", "$q", "DjWaiteReady", function ($scope, $timeout, $http, $q, DjWaiteReady) {
+      var configReady = new DjWaiteReady();
+      $scope.value = '';
+
+      this.$onChanges = function (changes) {
+        if (changes.configs) {
+          var configs = changes.configs.currentValue;
+          if (!configs || !configs.param) return;
+          /** 通知配置已初始化 */
+          initDropdownList(configs.param, $http, $q).then(function (list) {
+            $scope.list = $scope.list_full = list;
+            configReady.resolve(configs);
+          }).catch(function (e) {
+            $scope.list = $scope.list_full = [];
+          });
+        }
+        if (changes.initValue) {
+          var value = changes.initValue.currentValue;
+          configReady.ready(function (configs) {
+            var item = $scope.list.find(function (item) {
+              return item.value == value || item == value;
+            });
+            if (item) {
+              $scope.value = item.value || item;
+            }
+          });
+        }
+      };
+    }],
+
+    /** 下拉编辑框 */
+    "combobox": ["$scope", "$http", "$q", function ($scope, $http, $q) {
+
+      this.$onChanges = function (changes) {
+        if (changes.configs) {
+          var configs = changes.configs.currentValue;
+          if (!configs || !configs.param) return;
+          /** 配置变化时，重新计算列表 */
+          initDropdownList(configs.param, $http, $q).then(function (list) {
+            $scope.list = list;
+            calcSelected();
+          }).catch(function (e) {
+            $scope.list = [];
+          });
+        }
+        if (changes.initValue) {
+          $scope.value = changes.initValue.currentValue;
+          calcSelected();
+        }
+      };
+      /**
+       * 根据 $scope.value 计算选中项
+       * 要求：list 已初始化
+       */
+      var calcSelected = function calcSelected() {
+        if (!$scope.list) return;
+        $scope.selected = $scope.list.find(function (item) {
+          return (item.value || item) == $scope.value;
+        });
+      };
+    }],
+
+    /** 多选标签 */
+    "tags": ["$scope", "$http", "$q", function ($scope, $http, $q) {
+      this.$onChanges = function (changes) {
+        if (changes.configs) {
+          var configs = changes.configs.currentValue;
+          if (!configs || !configs.param) return;
+          /** 配置变化时，重新计算列表 */
+          initDropdownList(configs.param, $http, $q).then(function (list) {
+            $scope.list = list;
+          }).catch(function (e) {
+            $scope.list = [];
+          });
+        }
+        if (changes.initValue) {
+          $scope.value = changes.initValue.currentValue;
+        }
+      };
+    }],
+
+    /** 下拉框 - 显示 */
+    "tags-show": ["$scope", "$http", "$q", "DjWaiteReady", function ($scope, $http, $q, DjWaiteReady) {
+      var configReady = new DjWaiteReady();
+      $scope.value = [];
+
+      this.$onChanges = function (changes) {
+        if (changes.configs) {
+          var configs = changes.configs.currentValue;
+          if (!configs || !configs.param) return;
+          //console.log("多选标签, configs=", configs);
+          /** 通知配置已初始化 */
+          initDropdownList(configs.param, $http, $q).then(function (list) {
+            $scope.list = $scope.list_full = list;
+            configReady.resolve(configs);
+          }).catch(function (e) {
+            $scope.list = $scope.list_full = [];
+          });
+        }
+        if (changes.initValue) {
+          var value = changes.initValue.currentValue;
+          if (!angular.isArray(value)) return;
+          configReady.ready(function (configs) {
+            $scope.value = value.map(function (v) {
+              var item = $scope.list.find(function (item) {
+                return item.value == v || item == v;
+              });
+              if (item) {
+                return item.value || item;
+              }
+              return v;
+            });
+          });
+        }
+      };
+    }],
+
+    /** 单选框 */
+    "radio": ["$scope", function ($scope) {}],
+
+    /** 复选框 */
+    "check-box": ["$scope", function ($scope) {}],
+
+    /** 图片上传 */
+    "imgs-uploader": ["$scope", function ($scope) {
+      var _this11 = this;
+
+      $scope.initValue = [];
+      this.$onChanges = function (changes) {
+        if (changes.initValue) {
+          var initValue = changes.initValue.currentValue || [];
+          if (!angular.isArray(initValue)) initValue = [];
+          $scope.initValue = initValue;
+        }
+      };
+      $scope.onChange = function (imgs) {
+        _this11.onChange({ value: imgs });
+      };
+    }]
+  };
+  var theTemplates = {
+
+    /** 文本框 */
+    "input": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <djui-input class="flex"\n        param="$ctrl.configs.param"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-input>',
+    "input-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span>{{$ctrl.configs.title}}</span>\n        <span >{{$ctrl.initValue}}</span>\n      </div>',
+
+    /** 多行文本 */
+    "textarea": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <textarea\n        ng-model="value"\n        ng-change="change(value)"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n      ></textarea>',
+    "textarea-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span>{{$ctrl.configs.title}}</span>\n        <span br-text="{{$ctrl.initValue}}"></span>\n      </div>',
+
+    /** 下拉框 */
+    "dropdown": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <select class="item-body" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n        <option value="">{{$ctrl.configs.param.placeholder}}</option>\n        <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>\n      </select>\n      ',
+    "dropdown-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span>{{$ctrl.configs.title}}</span>\n        <span>{{text}}</span>\n      </div>',
+
+    /** 下拉编辑框 */
+    "combobox": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <div class="inputs">\n        <select class="item-body" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n          <option value="">{{$ctrl.configs.param.placeholder}}</option>\n          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>\n        </select>\n        <div class="caret-down flex flex-v-center"><div></div></div>\n        <djui-input class="flex"\n          param="$ctrl.configs.param"\n          placeholder="{{$ctrl.configs.param.placeholder}}"\n          init-value="$ctrl.initValue"\n          on-change="$ctrl.onChange({value: value})"\n        ></djui-input>\n      </div>\n      ',
+
+    /** 多选下拉框 */
+    "mulity-dropdown": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <select multiple="multiple" class="item-body multiple" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n        <option value="">{{$ctrl.configs.param.placeholder}}</option>\n        <option ng-repeat="item in list track by $index" value="{{$index}}">{{item.title||item}}</option>\n      </select>\n      ',
+
+    /** 多标签选择 */
+    "tags": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <djui-tags class="item-body"\n        list="list"\n        init-value="value"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-tags>\n      ',
+    "tags-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span>{{$ctrl.configs.title}}</span>\n        <djui-tags-show class="item-body"\n          list="value"\n        ></djui-tags-show>\n      </div>\n      ',
+
+    /** 单选框 */
+    "radio": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n    ',
+
+    /** 复选框 */
+    "check-box": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n    ',
+
+    /** 星星 */
+    "star": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <djui-star\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-star>\n    ',
+    "star-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span>{{$ctrl.configs.title}}</span>\n        <djui-star\n          init-value="$ctrl.initValue"\n          on-change="$ctrl.onChange({value: value})"\n          mode="show"\n        ></djui-star>\n      </div>\n    ',
+
+    /** 图片上传 */
+    "imgs-uploader": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <imgs-uploader class="padding-v-1"\n        imgs="initValue"\n        update-img="onChange(imgs)"\n      ></imgs-uploader>',
+    "imgs-uploader-show": '\n      <imgs-uploader class="padding-v-1 {{$ctrl.configs.css.hostBodyShow}}"\n        imgs="$ctrl.initValue"\n        mode="show"\n      ></imgs-uploader>'
+  };
+
+  var theComponentDefines = [{ name: "input" }, { name: "dropdown", showTemplate: "dropdown-show", showController: "dropdown-show" }, { name: "combobox", showTemplate: "input-show", showController: "dropdown-show" }, { name: "textarea", controller: "input" }, { name: "tags" }, { name: "radio" }, { name: "star", controller: "input" }, { name: "check-box" }, { name: "imgs-uploader" }];
+
+  function getTemplateEdit(type) {
+    var def = theComponentDefines.find(function (item) {
+      return item.name == type;
+    });
+    /** 强行定义的 */
+    if (def.editTemplate) {
+      return theTemplates[def.editTemplate];
+    }
+    /** 默认定义的 */
+    if (theTemplates[type]) {
+      return theTemplates[type];
+    }
+    return theTemplates["input"];
+  }
+  function getTemplateShow(type) {
+    var def = theComponentDefines.find(function (item) {
+      return item.name == type;
+    });
+    /** 强行定义的 */
+    if (def.showTemplate) {
+      return theTemplates[def.showTemplate];
+    }
+    /** 默认定义的 */
+    if (theTemplates[type + "-show"]) {
+      return theTemplates[type + "-show"];
+    }
+    return theTemplates["input-show"];
+  }
+  function getControllerShow(type) {
+    var def = theComponentDefines.find(function (item) {
+      return item.name == type;
+    });
+    /** 强行定义的 */
+    if (def.showController) {
+      return theControlers[def.showController];
+    }
+    /** 默认定义的 */
+    if (theControlers[type + "-show"]) {
+      return theControlers[type + "-show"];
+    }
+    return theControlers.empty;
+  }
+
+  /** 默认模板注入，用于插座调用 */
+  theModule.value("DjFormDefaultTemplate", theTemplates);
+  theModule.value("DjFormDefaultDefine", {
+    templates: theTemplates,
+    defines: theComponentDefines,
+    controlers: theControlers,
+    getTemplateEdit: getTemplateEdit,
+    getTemplateShow: getTemplateShow
+  });
+
+  /** 自动生成组件 */
+  function directiveNormalize(name) {
+    return name.replace(/[:\-_]+(.)/g, function (_, letter, offset) {
+      return offset ? letter.toUpperCase() : letter;
+    });
+  }
+  theComponentDefines.map(function (conponent) {
+    /** 所有编辑组件 */
+    theModule.component(directiveNormalize('' + DJ_FORM_DEFAULT.pre + conponent.name), {
+      bindings: {
+        configs: '<',
+        djDirty: '<',
+        djValid: '<',
+        invalidText: '<',
+        djRequire: '<',
+        initValue: '<',
+        onChange: '&'
+      },
+      template: "",
+      controller: theControlers[conponent.controller || conponent.name || 'empty']
+    });
+    /** 所有显示组件 */
+    theModule.component(directiveNormalize('' + DJ_FORM_DEFAULT.pre + conponent.name + '-show'), {
+      bindings: {
+        configs: '<',
+        initValue: '<'
+      },
+      template: "",
+      controller: getControllerShow(conponent.name)
+    });
+  });
+
+  /** 默认的部分显示 */
+  theModule.directive(directiveNormalize('dj-form-default-tip'), function () {
+    return {
+      restrict: 'A',
+      template: '\n        <div class="flex title" dj-form-default-tip-mini></div>\n        <div class="prompt error">{{$ctrl.djValid && \' \' || $ctrl.configs.valid.errorTip || \'\u6570\u636E\u4E0D\u5408\u6CD5\'}}</div>\n      '
+    };
+  }).directive(directiveNormalize('dj-form-default-tip-mini'), function () {
+    return {
+      restrict: 'A',
+      template: '\n        <div class="require">{{$ctrl.djRequire && \'*\' || \'\'}}</div>\n        <div class="prompt-text">{{$ctrl.configs.title}}</div>\n      '
+    };
+  });
+}(window, angular);
 !function (window, angular, undefined) {
 
   var theModule = angular.module('dj-pop');
@@ -1074,7 +1490,7 @@ angular.module('dj-ui', ['ngAnimate']);
     },
     template: '\n      <div class="feedback-top" ng-if="item.praise.length || item.feedback.length">\n      </div>\n      <div class="praise-list" ng-if="item.praise.length">\n        <i class="fa fa-heart-o"></i>\n        <span class="" ng-repeat="uid in item.praise track by $index">{{user[uid].nickname}}</span>\n      </div>\n      <div class="feedback-list" ng-if="item.feedback.length">\n        <div class="feedback-item" ng-mousedown="clickItem(item, feed.uid)" ng-repeat="feed in item.feedback track by $index">\n          <span class="username">{{user[feed.uid].nickname}}</span>\n          <span ng-if="feed.attr.fuid && feed.attr.fuid!=\'0\'">\u56DE\u590D <span class="username">{{user[feed.attr.fuid].nickname}}</span></span>\n          <span class="feedback-content">: {{feed.attr.content}}</span>\n        </div>\n      </div>\n    ',
     controller: ["$scope", "$http", "$q", "$animateCss", function ($scope, $http, $q, $animateCss) {
-      var _this9 = this;
+      var _this12 = this;
 
       this.$onChanges = function (changes) {
         if (changes.item) {
@@ -1087,7 +1503,7 @@ angular.module('dj-ui', ['ngAnimate']);
 
       /** 点击 */
       $scope.clickItem = function (item, fuid) {
-        _this9.clickItem({ item: item, fuid: fuid });
+        _this12.clickItem({ item: item, fuid: fuid });
       };
     }]
   });
@@ -1659,7 +2075,7 @@ angular.module('dj-ui', ['ngAnimate']);
     transclude: true,
     template: '<span>{{$ctrl.text}}</span>',
     controller: ["$scope", "$element", "$q", "$animateCss", function ($scope, $element, $q, $animateCss) {
-      var _this10 = this;
+      var _this13 = this;
 
       this.$onChanges = function (changes) {
         if (changes.delay) {
@@ -1669,7 +2085,7 @@ angular.module('dj-ui', ['ngAnimate']);
           show(delay);
         }
         if (changes.text) {
-          show(_this10.delay);
+          show(_this13.delay);
         }
       };
 
@@ -1722,422 +2138,6 @@ angular.module('dj-ui', ['ngAnimate']);
         });
       }
     }]
-  });
-}(window, angular);
-/**
- * 动态表单-所有子组件
- * ver: 0.1.0
- * build: 2018-04-26
- * power by LJH.
- */
-!function (window, angular, undefined) {
-  var DJ_FORM_DEFAULT = {
-    pre: "dj-form-default-item-"
-  };
-
-  var theModule = angular.module('dj-form');
-
-  /**
-   * 初始化下拉列表
-   * @param {*} param 要初始化列表的参数，false 表示用已有的数据(自己都忘了什么时候用false!，看看使用者吧)
-   */
-  function initDropdownList(param, $http, $q) {
-    if (param === false && initDropdownList.result) {
-      return $q.when(initDropdownList.result);
-    }
-    if (!param.list) return $q.when(initDropdownList.result = []);
-    if (angular.isString(param.list)) {
-      return $http.post('获取下拉列表/' + param.list, {}).then(function (json) {
-        console.log('获取下拉列表, json =', json);
-        return $q.when(initDropdownList.result = json.list);
-      }).catch(function (e) {
-        console.log('获取下拉列表, 失败: ', e);
-        return initDropdownList.result = $q.reject([]);
-      });
-    }
-    if (angular.isFunction(param.list)) {
-      return $q.when(initDropdownList.result = param.list());
-    }
-    return $q.when(initDropdownList.result = param.list);
-  }
-
-  var theControlers = {
-    /** 空的控制器 */
-    "empty": ['$scope', function ($scope) {}],
-
-    /** 一般的 input 绑定 */
-    "input": ['$scope', function ($scope) {
-      var _this11 = this;
-
-      this.$onChanges = function (changes) {
-        if (changes.initValue) {
-          $scope.value = changes.initValue.currentValue;
-        }
-      };
-      $scope.change = function (value) {
-        //console.log("ng-change", value);
-        _this11.onChange({ value: value });
-      };
-    }],
-
-    /** 一般的显示 */
-    "input-show": ['$scope', function ($scope) {
-      this.$onChanges = function (changes) {
-        if (changes.initValue) {
-          $scope.value = changes.initValue.currentValue;
-        }
-      };
-    }],
-
-    /** 下拉框 */
-    "dropdown": ["$scope", "$timeout", "$http", "$q", "DjWaiteReady", function ($scope, $timeout, $http, $q, DjWaiteReady) {
-      var _this12 = this;
-
-      var configReady = new DjWaiteReady();
-      $scope.value = '';
-      $scope.selected = '';
-      $scope.onToggle = function (open) {
-        $scope.focusInput = false;
-        open && $timeout(function () {
-          $scope.focusInput = true;
-        }, 50);
-      };
-      $scope.click = function (item) {
-        $scope.selected = item;
-        _this12.onChange({ value: item.value || item });
-      };
-      $scope.filter = function (searchText) {
-        if (!searchText) {
-          $scope.list = $scope.list_full;
-        } else {
-          var pattern = new RegExp(searchText.split('').join('\s*'), 'i');
-          $scope.list = $scope.list_full.filter(function (item) {
-            return pattern.test(item.value ? item.value + '-' + item.title : item);
-          });
-        }
-      };
-
-      this.$onChanges = function (changes) {
-        if (changes.configs) {
-          var configs = changes.configs.currentValue;
-          if (!configs || !configs.param) return;
-          //$scope.list = this.configs.param.list;
-          //$scope.list_full = this.configs.param.list;
-          //console.log('原下拉列表, list: ', $scope.list);
-          //console.log('组件,', this.configs.name, ",", $scope.id);
-          //$scope.list_full = this.configs.param.list;
-          $scope.searchMode = configs.param.searchMode;
-          /** 通知配置已初始化 */
-          initDropdownList(configs.param, $http, $q).then(function (list) {
-            $scope.list = $scope.list_full = list;
-            calcSelected();
-            configReady.resolve(configs);
-          }).catch(function (e) {
-            $scope.list = $scope.list_full = [];
-          });
-        }
-        if (changes.initValue) {
-          $scope.value = changes.initValue.currentValue;
-          configReady.ready(function (configs) {
-            // 不重新获取（当值初始化，或被上级再改变时）
-            initDropdownList(false).then(function (list) {
-              $scope.list = $scope.list_full = list;
-              calcSelected();
-            });
-          });
-        }
-      };
-
-      /**
-       * 根据 $scope.value 计算选中项
-       * 要求：list 已初始化
-       */
-      var calcSelected = function calcSelected() {
-        if (!$scope.list) return;
-        $scope.selected = $scope.list.find(function (item) {
-          return (item.value || item) == $scope.value;
-        });
-      };
-    }],
-
-    /** 下拉框 - 显示 */
-    "dropdown-show": ["$scope", "$timeout", "$http", "$q", "DjWaiteReady", function ($scope, $timeout, $http, $q, DjWaiteReady) {
-      var configReady = new DjWaiteReady();
-      $scope.value = '';
-
-      this.$onChanges = function (changes) {
-        if (changes.configs) {
-          var configs = changes.configs.currentValue;
-          if (!configs || !configs.param) return;
-          /** 通知配置已初始化 */
-          initDropdownList(configs.param, $http, $q).then(function (list) {
-            $scope.list = $scope.list_full = list;
-            configReady.resolve(configs);
-          }).catch(function (e) {
-            $scope.list = $scope.list_full = [];
-          });
-        }
-        if (changes.initValue) {
-          var value = changes.initValue.currentValue;
-          configReady.ready(function (configs) {
-            var item = $scope.list.find(function (item) {
-              return item.value == value || item == value;
-            });
-            if (item) {
-              $scope.value = item.value || item;
-            }
-          });
-        }
-      };
-    }],
-
-    /** 下拉编辑框 */
-    "combobox": ["$scope", "$http", "$q", function ($scope, $http, $q) {
-
-      this.$onChanges = function (changes) {
-        if (changes.configs) {
-          var configs = changes.configs.currentValue;
-          if (!configs || !configs.param) return;
-          /** 配置变化时，重新计算列表 */
-          initDropdownList(configs.param, $http, $q).then(function (list) {
-            $scope.list = list;
-            calcSelected();
-          }).catch(function (e) {
-            $scope.list = [];
-          });
-        }
-        if (changes.initValue) {
-          $scope.value = changes.initValue.currentValue;
-          calcSelected();
-        }
-      };
-      /**
-       * 根据 $scope.value 计算选中项
-       * 要求：list 已初始化
-       */
-      var calcSelected = function calcSelected() {
-        if (!$scope.list) return;
-        $scope.selected = $scope.list.find(function (item) {
-          return (item.value || item) == $scope.value;
-        });
-      };
-    }],
-
-    /** 多选标签 */
-    "tags": ["$scope", "$http", "$q", function ($scope, $http, $q) {
-      this.$onChanges = function (changes) {
-        if (changes.configs) {
-          var configs = changes.configs.currentValue;
-          if (!configs || !configs.param) return;
-          /** 配置变化时，重新计算列表 */
-          initDropdownList(configs.param, $http, $q).then(function (list) {
-            $scope.list = list;
-          }).catch(function (e) {
-            $scope.list = [];
-          });
-        }
-        if (changes.initValue) {
-          $scope.value = changes.initValue.currentValue;
-        }
-      };
-    }],
-
-    /** 下拉框 - 显示 */
-    "tags-show": ["$scope", "$http", "$q", "DjWaiteReady", function ($scope, $http, $q, DjWaiteReady) {
-      var configReady = new DjWaiteReady();
-      $scope.value = [];
-
-      this.$onChanges = function (changes) {
-        if (changes.configs) {
-          var configs = changes.configs.currentValue;
-          if (!configs || !configs.param) return;
-          //console.log("多选标签, configs=", configs);
-          /** 通知配置已初始化 */
-          initDropdownList(configs.param, $http, $q).then(function (list) {
-            $scope.list = $scope.list_full = list;
-            configReady.resolve(configs);
-          }).catch(function (e) {
-            $scope.list = $scope.list_full = [];
-          });
-        }
-        if (changes.initValue) {
-          var value = changes.initValue.currentValue;
-          if (!angular.isArray(value)) return;
-          configReady.ready(function (configs) {
-            $scope.value = value.map(function (v) {
-              var item = $scope.list.find(function (item) {
-                return item.value == v || item == v;
-              });
-              if (item) {
-                return item.value || item;
-              }
-              return v;
-            });
-          });
-        }
-      };
-    }],
-
-    /** 单选框 */
-    "radio": ["$scope", function ($scope) {}],
-
-    /** 复选框 */
-    "check-box": ["$scope", function ($scope) {}],
-
-    /** 图片上传 */
-    "imgs-uploader": ["$scope", function ($scope) {
-      var _this13 = this;
-
-      $scope.initValue = [];
-      this.$onChanges = function (changes) {
-        if (changes.initValue) {
-          var initValue = changes.initValue.currentValue || [];
-          if (!angular.isArray(initValue)) initValue = [];
-          $scope.initValue = initValue;
-        }
-      };
-      $scope.onChange = function (imgs) {
-        _this13.onChange({ value: imgs });
-      };
-    }]
-  };
-  var theTemplates = {
-
-    /** 文本框 */
-    "input": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <djui-input class="flex"\n        param="$ctrl.configs.param"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-input>',
-    "input-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span>{{$ctrl.configs.title}}</span>\n        <span >{{$ctrl.initValue}}</span>\n      </div>',
-
-    /** 多行文本 */
-    "textarea": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <textarea\n        ng-model="value"\n        ng-change="change(value)"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n      ></textarea>',
-    "textarea-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span>{{$ctrl.configs.title}}</span>\n        <span br-text="{{$ctrl.initValue}}"></span>\n      </div>',
-
-    /** 下拉框 */
-    "dropdown": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <select class="item-body" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n        <option value="">{{$ctrl.configs.param.placeholder}}</option>\n        <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>\n      </select>\n      ',
-    "dropdown-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span>{{$ctrl.configs.title}}</span>\n        <span>{{text}}</span>\n      </div>',
-
-    /** 下拉编辑框 */
-    "combobox": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <div class="inputs">\n        <select class="item-body" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n          <option value="">{{$ctrl.configs.param.placeholder}}</option>\n          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>\n        </select>\n        <div class="caret-down flex flex-v-center"><div></div></div>\n        <djui-input class="flex"\n          param="$ctrl.configs.param"\n          placeholder="{{$ctrl.configs.param.placeholder}}"\n          init-value="$ctrl.initValue"\n          on-change="$ctrl.onChange({value: value})"\n        ></djui-input>\n      </div>\n      ',
-
-    /** 多选下拉框 */
-    "mulity-dropdown": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <select multiple="multiple" class="item-body multiple" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n        <option value="">{{$ctrl.configs.param.placeholder}}</option>\n        <option ng-repeat="item in list track by $index" value="{{$index}}">{{item.title||item}}</option>\n      </select>\n      ',
-
-    /** 多标签选择 */
-    "tags": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <djui-tags class="item-body"\n        list="list"\n        init-value="value"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-tags>\n      ',
-    "tags-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span>{{$ctrl.configs.title}}</span>\n        <djui-tags-show class="item-body"\n          list="value"\n        ></djui-tags-show>\n      </div>\n      ',
-
-    /** 单选框 */
-    "radio": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n    ',
-
-    /** 复选框 */
-    "check-box": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n    ',
-
-    /** 星星 */
-    "star": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <djui-star\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-star>\n    ',
-    "star-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span>{{$ctrl.configs.title}}</span>\n        <djui-star\n          init-value="$ctrl.initValue"\n          on-change="$ctrl.onChange({value: value})"\n          mode="show"\n        ></djui-star>\n      </div>\n    ',
-
-    /** 图片上传 */
-    "imgs-uploader": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <imgs-uploader class="padding-v-1"\n        imgs="initValue"\n        update-img="onChange(imgs)"\n      ></imgs-uploader>',
-    "imgs-uploader-show": '\n      <imgs-uploader class="padding-v-1 {{$ctrl.configs.css.hostBodyShow}}"\n        imgs="$ctrl.initValue"\n        mode="show"\n      ></imgs-uploader>'
-  };
-
-  var theComponentDefines = [{ name: "input" }, { name: "dropdown", showTemplate: "dropdown-show", showController: "dropdown-show" }, { name: "combobox", showTemplate: "input-show", showController: "dropdown-show" }, { name: "textarea", controller: "input" }, { name: "tags" }, { name: "radio" }, { name: "star", controller: "input" }, { name: "check-box" }, { name: "imgs-uploader" }];
-
-  function getTemplateEdit(type) {
-    var def = theComponentDefines.find(function (item) {
-      return item.name == type;
-    });
-    /** 强行定义的 */
-    if (def.editTemplate) {
-      return theTemplates[def.editTemplate];
-    }
-    /** 默认定义的 */
-    if (theTemplates[type]) {
-      return theTemplates[type];
-    }
-    return theTemplates["input"];
-  }
-  function getTemplateShow(type) {
-    var def = theComponentDefines.find(function (item) {
-      return item.name == type;
-    });
-    /** 强行定义的 */
-    if (def.showTemplate) {
-      return theTemplates[def.showTemplate];
-    }
-    /** 默认定义的 */
-    if (theTemplates[type + "-show"]) {
-      return theTemplates[type + "-show"];
-    }
-    return theTemplates["input-show"];
-  }
-  function getControllerShow(type) {
-    var def = theComponentDefines.find(function (item) {
-      return item.name == type;
-    });
-    /** 强行定义的 */
-    if (def.showController) {
-      return theControlers[def.showController];
-    }
-    /** 默认定义的 */
-    if (theControlers[type + "-show"]) {
-      return theControlers[type + "-show"];
-    }
-    return theControlers.empty;
-  }
-
-  /** 默认模板注入，用于插座调用 */
-  theModule.value("DjFormDefaultTemplate", theTemplates);
-  theModule.value("DjFormDefaultDefine", {
-    templates: theTemplates,
-    defines: theComponentDefines,
-    controlers: theControlers,
-    getTemplateEdit: getTemplateEdit,
-    getTemplateShow: getTemplateShow
-  });
-
-  /** 自动生成组件 */
-  function directiveNormalize(name) {
-    return name.replace(/[:\-_]+(.)/g, function (_, letter, offset) {
-      return offset ? letter.toUpperCase() : letter;
-    });
-  }
-  theComponentDefines.map(function (conponent) {
-    /** 所有编辑组件 */
-    theModule.component(directiveNormalize('' + DJ_FORM_DEFAULT.pre + conponent.name), {
-      bindings: {
-        configs: '<',
-        djDirty: '<',
-        djValid: '<',
-        invalidText: '<',
-        djRequire: '<',
-        initValue: '<',
-        onChange: '&'
-      },
-      template: "",
-      controller: theControlers[conponent.controller || conponent.name || 'empty']
-    });
-    /** 所有显示组件 */
-    theModule.component(directiveNormalize('' + DJ_FORM_DEFAULT.pre + conponent.name + '-show'), {
-      bindings: {
-        configs: '<',
-        initValue: '<'
-      },
-      template: "",
-      controller: getControllerShow(conponent.name)
-    });
-  });
-
-  /** 默认的部分显示 */
-  theModule.directive(directiveNormalize('dj-form-default-tip'), function () {
-    return {
-      restrict: 'A',
-      template: '\n        <div class="flex title" dj-form-default-tip-mini></div>\n        <div class="prompt error">{{$ctrl.djValid && \' \' || $ctrl.configs.valid.errorTip || \'\u6570\u636E\u4E0D\u5408\u6CD5\'}}</div>\n      '
-    };
-  }).directive(directiveNormalize('dj-form-default-tip-mini'), function () {
-    return {
-      restrict: 'A',
-      template: '\n        <div class="require">{{$ctrl.djRequire && \'*\' || \'\'}}</div>\n        <div class="prompt-text">{{$ctrl.configs.title}}</div>\n      '
-    };
   });
 }(window, angular);
 /**
@@ -2359,8 +2359,7 @@ angular.module('dj-ui', ['ngAnimate']);
         slowTurn: 0.3, // 慢速移动可翻页的比例
         init: function init() {
           Move.box = $element[0].querySelector(".djui-gallery-box");
-          $element.children().css("height", $element[0].clientHeight);
-          $element.children().css("width", $element[0].clientWidth);
+          angular.element(Move.box).css("height", $element[0].clientHeight).css("width", $element[0].clientWidth);
           var w = Move.box.clientWidth;
           //console.log("初始化, w=", w);
           Move.list = $element[0].querySelector(".djui-gallery-list");
