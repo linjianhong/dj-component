@@ -53,7 +53,7 @@
     template: `<dj-toast delay="{{options.param.delay}}" text="{{options.param.text}}"></dj-toast>`
   });
 
-  theModule.factory("DjPop", ["$compile", "$rootScope", "DjWaiteReady", "$animateCss", function ($compile, $rootScope, DjWaiteReady, $animateCss) {
+  theModule.factory("DjPop", ["$compile", "$rootScope", "DjWaiteReady", "$animateCss", "$q", function ($compile, $rootScope, DjWaiteReady, $animateCss, $q) {
     /**
      * 显示功能
      * @param {string} component
@@ -150,8 +150,8 @@
       var scopeParent = options.scope || $rootScope;
       var scopeDjPop = scopeParent.$new();
       var attr = [];
-      for(var k in params){
-        if(params.hasOwnProperty(k)){
+      for (var k in params) {
+        if (params.hasOwnProperty(k)) {
           attr.push(`${k}="${k}"`);
           scopeDjPop[k] = params[k];
         }
@@ -208,7 +208,12 @@
         options = body;
       }
       options.template = `<djui-dialog param="param"></djui-dialog>`;
-      return showComponent(options);
+      return showComponent(options).then(btnName => {
+        if (btnName != "OK") {
+          return $q.reject(btnName)
+        }
+        return btnName;
+      });
     }
 
     function confirm(body, title) {
@@ -217,7 +222,12 @@
         options = body;
       }
       options.template = `<djui-dialog param="param"></djui-dialog>`;
-      return showComponent(options);
+      return showComponent(options).then(btnName => {
+        if (btnName != "OK") {
+          return $q.reject(btnName)
+        }
+        return btnName;
+      });
     }
 
     return {
