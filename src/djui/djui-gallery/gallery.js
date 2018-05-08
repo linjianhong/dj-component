@@ -1,8 +1,8 @@
 !(function (window, angular, undefined) {
 
-  var theModule = angular.module('dj-pop');
+  var theModule = angular.module('dj-ui');
 
-  theModule.component('djGallery', {
+  theModule.component('djuiGallery', {
     bindings: {
       imgs: '<',
       active: '<',
@@ -14,14 +14,14 @@
     transclude: true,
     replace: true,
     template: `
-      <div class="dj-gallery-box">
-        <div class="dj-gallery-list flex" ng-transclude>
-          <div class="dj-gallery-item item-{{$index+1-active}}" ng-repeat="img in imgs track by $index" >
+      <div class="djui-gallery-box">
+        <div class="djui-gallery-list flex" ng-transclude>
+          <div class="djui-gallery-item item-{{$index+1-active}}" ng-repeat="img in imgs track by $index" >
             <img class="" ng-src="{{img}}"/>
           </div>
         </div>
-        <div class="dj-gallery-nav flex flex-between">
-          <div class="dots flex flex-w1 flex-center" ng-if="1">
+        <div class="djui-gallery-nav flex flex-between">
+          <div class="dots flex flex-1 flex-center" ng-if="1">
             <div ng-click="scrollTo($index)" ng-repeat="img in imgs track by $index">{{$index==active&&'●'||'○'}}</div>
           </div>
           <div class="btns flex flex-center" ng-if="$ctrl.btns.length">
@@ -30,10 +30,10 @@
             </div>
           </div>
         </div>
-        <div class="dj-gallery-debug" ng-if="debug">
+        <div class="djui-gallery-debug" ng-if="debug">
           {{debug}}
         </div>
-        <div class="dj-gallery-top" ng-if="isMoving">
+        <div class="djui-gallery-top" ng-if="isMoving">
         </div>
       </div>
     `,
@@ -59,6 +59,7 @@
         setTimeout(() => {
           Move.init();
           var eleHandleMouse = $element[0];
+          eleHandleMouse = $element[0].querySelector(".djui-gallery-list");
           eleHandleMouse.addEventListener('mousedown', Move.onTouchstart, true);
           eleHandleMouse.addEventListener('touchstart', Move.onTouchstart, true);
           eleHandleMouse.addEventListener('mousemove', Move.onTouchmove, true);
@@ -75,12 +76,12 @@
         fastPx: 5, // 快速滑动系数，越小，表示满足快速滑动的速度越大
         slowTurn: 0.3, // 慢速移动可翻页的比例
         init: function () {
-          Move.box = $element[0].querySelector(".dj-gallery-box");
+          Move.box = $element[0].querySelector(".djui-gallery-box");
           $element.children().css("height", $element[0].clientHeight);
           $element.children().css("width", $element[0].clientWidth);
           var w = Move.box.clientWidth;
           //console.log("初始化, w=", w);
-          Move.list = $element[0].querySelector(".dj-gallery-list");
+          Move.list = $element[0].querySelector(".djui-gallery-list");
           angular.element(Move.list).css("width", (w * $scope.pageCount) + "px");
           angular.element(Move.list).children().css("width", w + "px");
           //setTimeout(() => { angular.element(Move.list).addClass("flex"); }, 200);
@@ -221,7 +222,5 @@
 
     }]
   });
-
-
 
 })(window, angular);

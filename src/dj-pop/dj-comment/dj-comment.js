@@ -5,8 +5,8 @@
 
   var theDefault = {
     form_css: {
-      form: "flex publish",
-      form2: "",
+      host: "flex publish",
+      host2: "",
       hostEdit: "box flex flex-top",
       hostShow: "flex-1",
       hostBodyShow: "flex-1 flex-top",

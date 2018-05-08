@@ -1,0 +1,33 @@
+my-app .btns{
+  padding: 1em;
+}
+
+
+my-app .btns > *{
+  padding: .5em 1em;
+  border: solid 0;
+  border-radius: .3em;
+  margin: .5em;
+}
+my-app .btns > .btn-1 {
+  background: #5555cc;
+  color: #ffffff;
+}
+my-app .btns > .btn-2 {
+  background: #cc3366;
+  color: #ffffff;
+}
+my-app .btns > .btn-3 {
+  background: #6699cc;
+  color: #ffffff;
+}
+my-app .btns > .btn-4 {
+  background: #ff8800;
+  color: #ffffff;
+}
+my-app .btns > .btn-5 {
+  background: #cc33ff;
+  color: #ffffff;
+}
+
+

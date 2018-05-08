@@ -1,17 +1,17 @@
 
-dj-gallery{
+djui-gallery{
   display: block;
   width: 100%;
   height:100%;
 }
-.dj-gallery-box{
+.djui-gallery-box{
   position: relative;
   width: 100%;
   height:100%;
   background: #cccccc;
   overflow-x: hidden;
 }
-.dj-gallery-box .dj-gallery-top {
+.djui-gallery-box .djui-gallery-top {
   position: absolute;
   z-index: 5;
   top: 0;
@@ -22,7 +22,7 @@ dj-gallery{
 }
 
 
-.dj-gallery-box > .dj-gallery-list {
+.djui-gallery-box > .djui-gallery-list {
   position: absolute;
   z-index: 1;
   top: 0;
@@ -34,21 +34,21 @@ dj-gallery{
   overflow: hidden;
 }
 
-.dj-gallery-box > .dj-gallery-list  > * {
+.djui-gallery-box > .djui-gallery-list  > * {
   display: inline-block;
   height: 100%;
   width: 100%;
   background: #cccccc;
 }
 
-.dj-gallery-box > .dj-gallery-list  > * > img{
+.djui-gallery-box > .djui-gallery-list  > * > img{
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
 
-.dj-gallery-box > .dj-gallery-debug  {
+.djui-gallery-box > .djui-gallery-debug  {
   position: absolute;
   z-index: 2;
   top: .30rem;
@@ -60,24 +60,24 @@ dj-gallery{
 }
 
 
-.dj-gallery-box > .dj-gallery-nav  {
+.djui-gallery-box > .djui-gallery-nav  {
   position: absolute;
   z-index: 2;
   bottom: .30rem;
   left: 0;
   width: 100%;
 }
-.dj-gallery-box > .dj-gallery-nav > *,
-.dj-gallery-box > .dj-gallery-nav > * > *{
+.djui-gallery-box > .djui-gallery-nav > *,
+.djui-gallery-box > .djui-gallery-nav > * > *{
   font-size: .26rem;
   line-height: 1.1;
 }
 
-.dj-gallery-box > .dj-gallery-nav > .btns {
+.djui-gallery-box > .djui-gallery-nav > .btns {
   padding-right: .25rem;
 }
 
-.dj-gallery-box > .dj-gallery-nav > .btns > * {
+.djui-gallery-box > .djui-gallery-nav > .btns > * {
   background: #88888888;
   padding: .05rem .10rem;
   border-radius: .05rem;

@@ -1,0 +1,50 @@
+
+djui-dialog > .djui-dialog {
+  display: inline-block;
+}
+
+djui-dialog > .djui-dialog > .back {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  right:0;
+  bottom: 0;
+  background: rgba(0,0,0,0.3);
+}
+
+
+djui-dialog > .djui-dialog > .box {
+  position: fixed;
+  z-index: 1100;
+  width: 80%;
+  max-width: 300px;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  background-color: #FFFFFF;
+  text-align: center;
+  border-radius: 3px;
+  overflow: hidden;
+}
+djui-dialog > .djui-dialog > .box > .title {
+  padding: 1em 0 .5em;
+  font-size: 1.2em;
+}
+djui-dialog > .djui-dialog > .box > .body {
+  padding: 0 .8em .5em;
+  color: #888888;
+}
+
+
+djui-dialog > .djui-dialog > .box > .footer {
+  border-top: solid 1px #eeeeee;
+  font-size: 1.2em;
+}
+djui-dialog > .djui-dialog > .box > .footer .thin-btns > * {
+  padding: .5em 0;
+}
+
+
+

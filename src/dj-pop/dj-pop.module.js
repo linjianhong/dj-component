@@ -1,2 +1,2 @@
 
-angular.module('dj-pop', ['ngAnimate']);
+angular.module('dj-pop', ['dj-ui', 'ngAnimate']);

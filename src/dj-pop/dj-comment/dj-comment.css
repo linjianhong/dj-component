@@ -195,7 +195,7 @@ input, button {
 .dj-comment-box .btns {
   padding: .5em 2em;
 }
-.btns > .btn{
+.dj-comment-box .btns > .btn{
   padding: 1em 0;
   text-align: center;
   border-radius: .3em;

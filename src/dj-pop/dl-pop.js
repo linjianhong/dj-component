@@ -91,7 +91,10 @@
         //console.log('对话框关闭', data);
         waiteDialog.resolve(data);
       }
-    }    /**
+    }
+
+
+    /**
     * 显示功能
     * @param {string} component
     * @param {object} options
@@ -104,10 +107,62 @@
       var element = options.element || document.body;
       var scopeParent = options.scope || $rootScope;
       var scopeDjPop = scopeParent.$new();
-      scopeDjPop.options = options;
+      scopeDjPop.param = options.param;
       var template = options.template;
-      var dlg = $compile(template)(scopeDjPop);
-      element.append(dlg[0]);
+      var dlg = angular.element(`<div>${template}</div>`);
+      angular.element(element).append(dlg);
+      dlg.scope(scopeDjPop);
+      $compile(dlg.contents())(scopeDjPop);
+      //var dlg = $compile(template)(scopeDjPop);
+      //angular.element(element).append(dlg[0]);
+      var listener = scopeDjPop.$on("dj-pop-box-close", function (event, data) {
+        event.preventDefault();
+        closeDjg(data);
+      });
+      //显示时按浏览器的后退按钮：关闭对话框
+      var listener2 = scopeDjPop.$on("$locationChangeStart", function (event) {
+        event.preventDefault();
+        closeDjg("locationChange");
+      });
+      return waiteDialog.ready();
+
+      function closeDjg(data) {
+        setTimeout(() => {
+          scopeDjPop.$destroy();
+          dlg && dlg.remove();
+          dlg = null;
+        })
+        //console.log('对话框关闭', data);
+        waiteDialog.resolve(data);
+      }
+    }
+    /**
+    * 显示功能
+    * @param {string} component
+    * @param {object} options
+    * @param {function|false} options.beforeClose: 将要关闭，返回 false, 或 reject, 不可关闭
+    * @param {function|false} options.onClose: 关闭时回调
+    */
+    function showComponentAutoParams(componentName, params, options) {
+      options = options || {};
+      var waiteDialog = new DjWaiteReady();
+      var element = options.element || document.body;
+      var scopeParent = options.scope || $rootScope;
+      var scopeDjPop = scopeParent.$new();
+      var attr = [];
+      for(var k in params){
+        if(params.hasOwnProperty(k)){
+          attr.push(`${k}="${k}"`);
+          scopeDjPop[k] = params[k];
+        }
+      }
+      var template = `<${componentName} ${attr.join(' ')}></${componentName}>`;
+      var dlg = angular.element(`<div class="djui-fixed-box">${template}</div>`);
+      angular.element(element).append(dlg);
+      dlg.scope(scopeDjPop);
+      $compile(dlg.contents())(scopeDjPop);
+      //var dlg = $compile(template)(scopeDjPop);
+      //angular.element(element).append(dlg[0]);
       var listener = scopeDjPop.$on("dj-pop-box-close", function (event, data) {
         event.preventDefault();
         closeDjg(data);
@@ -131,33 +186,45 @@
     }
 
 
-    function gallery(options) {
-      return show("dj-gallery", options);
+    function gallery(params, options) {
+      return showComponentAutoParams("djui-gallery", params, options);
+      return show("djui-gallery", options);
     }
 
-    function toast(options) {
-      options = options || {};
-      options.template = `<dj-toast text="${options.text}" delay="${options.delay}"></dj-toast>`;
+    function toast(text, delay) {
+      var options = {};
+      if (angular.isObject(text)) {
+        options = text;
+        delay = text.delay;
+        text = text.text;
+      }
+      options.template = `<dj-toast text="${text}" delay="${delay}"></dj-toast>`;
       return showComponent(options);
     }
 
-    function confirm(options) {
-      options = options || {};
-      if (angular.isString(options)) {
-        options = { title: options }
+    function alert(body, title) {
+      var options = { param: { body, title, backClose: 1, cancel: { hide: 1 } } };
+      if (angular.isObject(body)) {
+        options = body;
       }
-      options.template = `
-      <dj-dialog
-        dlg-body="${options.body}"
-        dlg-title="${options.title || 'confirm'}"
-      ></dj-dialog>`;
+      options.template = `<djui-dialog param="param"></djui-dialog>`;
+      return showComponent(options);
+    }
+
+    function confirm(body, title) {
+      var options = { param: { body, title } };
+      if (angular.isObject(body)) {
+        options = body;
+      }
+      options.template = `<djui-dialog param="param"></djui-dialog>`;
       return showComponent(options);
     }
 
     return {
       show,
-      toast,
+      alert,
       confirm,
+      toast,
       gallery,
     }
   }])

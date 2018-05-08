@@ -19,7 +19,7 @@
       template: `
         <div class="flex">
           <i class="fa fa-{{$ctrl.icon || $ctrl.param.icon}}" ng-if="$ctrl.icon || $ctrl.param.icon"></i>
-          <input class="flex-w1"
+          <input class="flex-1"
             dj-focus="{{djFocus}}"
             placeholder="{{$ctrl.placeholder}}"
             ng-model="ngModel"
