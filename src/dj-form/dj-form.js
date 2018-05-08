@@ -26,11 +26,14 @@
         on-status-change="onItemStatusChange(item, valid, dirty)"
         on-value-change="onItemValueChange(item, value, valid, dirty)"
         ng-repeat="subItem in configItems track by $index"
+        ng-if="!stop"
       ></dj-form-item>`,
     controller: ['$scope', '$element', '$timeout', '$q', 'DjWaiteReady', function ($scope, $element, $timeout, $q, DjWaiteReady) {
 
       var theMode = false;
       var theChanges = {};
+
+      $scope.stop = true;
 
       this.$onChanges = (changes) => {
         /** 首先，保存所有的参数传递 */
@@ -46,15 +49,29 @@
           if (mode != 'show') mode = 'edit';
           if (mode != theMode) {
             theMode = $scope.mode = mode;
-            var fn = mode == "show" && ctrlHostShow || ctrlHostEdit;
-            fn.call(this, $scope, $element, $timeout, $q, DjWaiteReady);
+            $scope.stop = true;
+            var theValue = $scope.memValue || {};
+            console.log("有 mode 改变: ", theMode, " => ", mode, ", memValue=", theValue);
+            if (!theChanges.configs) theChanges.configs = {};
+            if (!theChanges.configs.currentValue) theChanges.configs.currentValue = $scope.configs;
+            if (!theChanges.initValues) theChanges.initValues = {};
+            if (!theChanges.initValues.currentValue) theChanges.initValues.currentValue = theValue;
+            $timeout(() => {
+              $scope.stop = false;
+              var fn = mode == "show" && ctrlHostShow || ctrlHostEdit;
+              fn.call(this, $scope, $element, $timeout, $q, DjWaiteReady);
+              this.onChangesCtrl(theChanges);
+              theChanges = {};
+            });
           }
         }
 
         /** 如果有 mode 数据，就响应参数传递 */
-        if (theMode) {
-          this.onChangesCtrl(theChanges);
-          theChanges = {};
+        if (theMode && this.onChangesCtrl) {
+          $timeout(() => {
+            this.onChangesCtrl(theChanges);
+            theChanges = {};
+          });
         }
       }
     }]
@@ -70,12 +87,13 @@
     var configReady = new DjWaiteReady();
 
     this.onChangesCtrl = (changes) => {
-      if (changes.initValues) {
-        //console.log('上级通知值变化 djForm', changes.initValues);
-        // 初始化整个表单的值，以确保下级上传时，表单值完整
-        initValues(this.initValues);
+      if (changes.configs) {
+        $scope.configs = changes.configs.currentValue;
+        initConfigs(changes.configs.currentValue);
       }
-      if (changes.configs) initConfigs(changes.configs.currentValue);
+      if (changes.initValues) {
+        initValues(changes.initValues.currentValue);
+      }
     }
 
     /**
@@ -167,7 +185,9 @@
     this.onChangesCtrl = (changes) => {
       if (changes.configs) $scope.configs = changes.configs.currentValue;
       if (changes.initValues) $scope.memValue = changes.initValues.currentValue;
-      initConfigs($scope.configs, $scope.memValue);
+      if(changes.configs || changes.initValues){
+        initConfigs($scope.configs, $scope.memValue);
+      }
     }
     /**
      * 初始化配置
@@ -183,6 +203,14 @@
         return angular.extend({ pre, css, template: templates[item.type + "-show"] }, item);
       });
     };
+
+
+
+    /**
+     * 不接收事件
+     */
+    $scope.onItemStatusChange = () => { }
+    $scope.onItemValueChange = () => { }
   }
 
 

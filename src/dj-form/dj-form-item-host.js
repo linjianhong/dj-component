@@ -80,8 +80,8 @@
           dj-dirty="theValid.dirty"
         ></${eleName}>
       `;
-      var childElement = $compile(template)($scope);
-      $element.append(childElement[0]);
+      $element.html(template);
+      var childElement = $compile($element.contents())($scope);
       var childScope = $scope.$$childHead;
       var childTemplate = configs.template || DjFormDefaultDefine.getTemplateEdit(eleType);
       childElement.html(childTemplate);
@@ -300,13 +300,12 @@
           init-value="$ctrl.initValue"
         ></${eleName}-show>
       `;
-      var childElement = $compile(template)($scope);
-      $element.append(childElement[0]);
-      //console.log("HOST 编译 childElement=", childElement);
+      $element.html(template);
+      var childElement = $compile($element.contents())($scope);
       var childScope = $scope.$$childHead;
       var childTemplate = configs.template || DjFormDefaultDefine.getTemplateShow(eleType);
-      var childContent = $compile(childTemplate)(childScope);
-      childElement.html(childContent);
+      childElement.html(childTemplate);
+      $compile(childElement.contents())(childScope);
     };
 
 
