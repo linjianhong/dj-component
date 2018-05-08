@@ -58,7 +58,7 @@
       this.$onInit = () => {
         setHandleMouse(".djui-gallery-box");
       }
-      function setHandleMouse (selector) {
+      function setHandleMouse(selector) {
         setTimeout(() => {
           Move.init();
           var eleHandleMouse = $element[0];
@@ -80,8 +80,9 @@
         slowTurn: 0.3, // 慢速移动可翻页的比例
         init: function () {
           Move.box = $element[0].querySelector(".djui-gallery-box");
-          $element.children().css("height", $element[0].clientHeight);
-          $element.children().css("width", $element[0].clientWidth);
+          angular.element(Move.box)
+            .css("height", $element[0].clientHeight)
+            .css("width", $element[0].clientWidth);
           var w = Move.box.clientWidth;
           //console.log("初始化, w=", w);
           Move.list = $element[0].querySelector(".djui-gallery-list");
@@ -144,7 +145,7 @@
           Move.list.style.left = (Move.offsetLeft + Move.x1 - Move.x0) + 'px';
           var dx = Math.abs(Move.x1 - Move.x0);
           var dy = Math.abs(Move.y1 - Move.y0);
-          if(!Move.moved && dy>Move.min && dy>dx){
+          if (!Move.moved && dy > Move.min && dy > dx) {
             Move.canceled = true;
             return;
           }
