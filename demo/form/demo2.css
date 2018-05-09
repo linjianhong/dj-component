@@ -23,17 +23,12 @@ dj-form.my-form > dj-form-item-host > *{
   flex-direction: row;
   align-items:center;
   min-height: 3em;
-  padding: 0 .8em;
+  padding: .3em .8em;
 }
-
-dj-form.my-form > dj-form-item-host > * > input ,
-dj-form.my-form > dj-form-item-host > * > textarea ,
-dj-form.my-form > dj-form-item-host > * > djui-input ,
-dj-form.my-form > dj-form-item-host > * > uib-dropdown ,
-dj-form.my-form > dj-form-item-host > * > select,
-dj-form.my-form > dj-form-item-host > * > * > select {
+dj-form.my-form > dj-form-item-host.mode-edit > * > .b {
   border: solid 0;
 }
+
 
 dj-form.my-form > dj-form-item-host > * > *:first-child{
   width: 6em;

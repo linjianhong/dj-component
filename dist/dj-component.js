@@ -297,6 +297,15 @@ angular.module('dj-ui', ['ngAnimate']);
     };
   }
 }(window, angular);
+
+angular.module('dj-form').filter('formFormat', function () {
+  //可以注入依赖
+  return function (str, format) {
+    if (!angular.isString(format)) return str;
+    if (!angular.isString(str)) str = "";
+    return format.replace(/\{1\}/g, str);
+  };
+});
 /**
  * 动态表单组件
  * ver: 0.1.1
@@ -1330,28 +1339,30 @@ angular.module('dj-ui', ['ngAnimate']);
     }]
   };
   var theTemplates = {
+    /** 几个通用显示(未格式化) */
+    "initValue-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <span class="b">{{$ctrl.initValue}}</span>\n      </div>',
+    "text-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <span class="b">{{text}}</span>\n      </div>',
+    "textarea-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <span class="b" br-text="{{$ctrl.initValue}}"></span>\n      </div>',
+
+    /** 几个通用显示 (格式化) */
+    "initValue-format-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <span class="b">{{$ctrl.initValue|formFormat:($ctrl.configs.show.format)}}</span>\n      </div>',
+    "text-format-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <span class="b">{{text|formFormat:($ctrl.configs.show.format)}}</span>\n      </div>',
 
     /** 文本框 */
-    "input": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <djui-input class="flex"\n        param="$ctrl.configs.param"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-input>',
-    "input-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span>{{$ctrl.configs.title}}</span>\n        <span >{{$ctrl.initValue}}</span>\n      </div>',
+    "input": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <djui-input class="b flex"\n        param="$ctrl.configs.param"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-input>',
 
     /** 多行文本 */
-    "textarea": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <textarea\n        ng-model="value"\n        ng-change="change(value)"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n      ></textarea>',
-    "textarea-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span>{{$ctrl.configs.title}}</span>\n        <span br-text="{{$ctrl.initValue}}"></span>\n      </div>',
+    "textarea": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <textarea class="b"\n        ng-model="value"\n        ng-change="change(value)"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n      ></textarea>',
 
     /** 下拉框 */
-    "dropdown": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <select class="item-body" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n        <option value="">{{$ctrl.configs.param.placeholder}}</option>\n        <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>\n      </select>\n      ',
-    "dropdown-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span>{{$ctrl.configs.title}}</span>\n        <span>{{text}}</span>\n      </div>',
+    "dropdown": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <div class="b inputs flex flex-v-center">\n        <div class="placeholder">{{$ctrl.configs.param.placeholder||\'\'}}</div>\n        <select class="b item-body {{!value&&\'empty\'}}" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n          <option value=""></option>\n          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>\n        </select>\n      </div>\n      ',
 
     /** 下拉编辑框 */
-    "combobox": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <div class="inputs">\n        <select class="item-body" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n          <option value="">{{$ctrl.configs.param.placeholder}}</option>\n          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>\n        </select>\n        <div class="caret-down flex flex-v-center"><div></div></div>\n        <djui-input class="flex"\n          param="$ctrl.configs.param"\n          placeholder="{{$ctrl.configs.param.placeholder}}"\n          init-value="$ctrl.initValue"\n          on-change="$ctrl.onChange({value: value})"\n        ></djui-input>\n      </div>\n      ',
-
-    /** 多选下拉框 */
-    "mulity-dropdown": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <select multiple="multiple" class="item-body multiple" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n        <option value="">{{$ctrl.configs.param.placeholder}}</option>\n        <option ng-repeat="item in list track by $index" value="{{$index}}">{{item.title||item}}</option>\n      </select>\n      ',
+    "combobox": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <div class="b inputs">\n        <select class="item-body" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n          <option value=""></option>\n          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>\n        </select>\n        <div class="caret-down flex flex-v-center"><div></div></div>\n        <djui-input class="flex"\n          param="$ctrl.configs.param"\n          placeholder="{{$ctrl.configs.param.placeholder}}"\n          init-value="$ctrl.initValue"\n          on-change="$ctrl.onChange({value: value})"\n        ></djui-input>\n      </div>\n      ',
 
     /** 多标签选择 */
-    "tags": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <djui-tags class="item-body"\n        list="list"\n        init-value="value"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-tags>\n      ',
-    "tags-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span>{{$ctrl.configs.title}}</span>\n        <djui-tags-show class="item-body"\n          list="value"\n        ></djui-tags-show>\n      </div>\n      ',
+    "tags": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <djui-tags class="item-body"\n        list="list"\n        init-value="value"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-tags>\n      ',
+    "tags-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <djui-tags-show class="b item-body" list="value"></djui-tags-show>\n      </div>\n      ',
 
     /** 单选框 */
     "radio": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n    ',
@@ -1360,18 +1371,19 @@ angular.module('dj-ui', ['ngAnimate']);
     "check-box": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n    ',
 
     /** 星星 */
-    "star": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <djui-star\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-star>\n    ',
-    "star-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span>{{$ctrl.configs.title}}</span>\n        <djui-star\n          init-value="$ctrl.initValue"\n          on-change="$ctrl.onChange({value: value})"\n          mode="show"\n        ></djui-star>\n      </div>\n    ',
+    "star": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <djui-star class=""\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-star>\n    ',
+    "star-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <djui-star class="b"\n          init-value="$ctrl.initValue"\n          on-change="$ctrl.onChange({value: value})"\n          mode="show"\n        ></djui-star>\n      </div>\n    ',
 
     /** 图片上传 */
     "imgs-uploader": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <imgs-uploader class="padding-v-1"\n        imgs="initValue"\n        update-img="onChange(imgs)"\n      ></imgs-uploader>',
-    "imgs-uploader-show": '\n      <imgs-uploader class="padding-v-1 {{$ctrl.configs.css.hostBodyShow}}"\n        imgs="$ctrl.initValue"\n        mode="show"\n      ></imgs-uploader>'
+    "imgs-uploader-show": '\n      <div class="flex">\n        <imgs-uploader class="b padding-v-1 {{$ctrl.configs.css.hostBodyShow}}"\n          imgs="$ctrl.initValue"\n          mode="show"\n        ></imgs-uploader>\n      </div>\n    '
   };
 
-  var theComponentDefines = [{ name: "input" }, { name: "textarea", controller: "input" }, { name: "dropdown", showTemplate: "dropdown-show", showController: "dropdown-show" }, { name: "combobox", showTemplate: "input-show", showController: "dropdown-show" }, { name: "tags" }, { name: "radio" }, { name: "star", controller: "input" }, { name: "check-box" }, { name: "imgs-uploader" }];
+  var theComponentDefines = [{ name: "input", showTemplate: "initValue-format-show" }, { name: "textarea", showTemplate: "textarea-show", controller: "input" }, { name: "dropdown", showTemplate: "text-format-show", showController: "dropdown-show" }, { name: "combobox", showTemplate: "initValue-format-show", showController: "dropdown-show" }, { name: "tags" }, { name: "radio" }, { name: "star", controller: "input" }, { name: "check-box" }, { name: "imgs-uploader" }];
   /** 强制引用 */
   var theComponentDefineRefs = {
-    select: "dropdown"
+    select: "dropdown",
+    combo: "combobox"
   };
 
   function getSafeDefine(type) {
@@ -1409,7 +1421,7 @@ angular.module('dj-ui', ['ngAnimate']);
     if (theTemplates[type + "-show"]) {
       return theTemplates[type + "-show"];
     }
-    return theTemplates["input-show"];
+    return theTemplates["initValue-format-show"];
   }
   function getControllerEdit(type) {
     var def = getSafeDefine(type);

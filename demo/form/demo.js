@@ -4,14 +4,29 @@ var theForm = {
   items: [
     { name: 't1', title: 'text1', type: 'input' },
     {
-      name: 't2', title: 'text2', type: 'input', param: {
+      name: 't2', title: 'text2', type: 'input',
+      show: {
+        format: "{1} (KG)"
+      },
+      param: {
         valid: { require: true, minlength: 2, maxlength: 8 },
         invalid: { required: "required", minlength: "too short", maxlength: "more then length 8" },
-        placeholder: "2 ~ 8 chars"
+        placeholder: "2 ~ 8 chars",
       }
     },
-    { name: 's1', title: '下拉框1', type: 'dropdown', param: { valid: { require: true }, list: ['item1', 'item2', 'item3'], placeholder: "-- Please select on --" } },
-    { name: 's1', title: '下拉框别名', type: 'select', param: { valid: { require: true }, list: ['item1', 'item2', 'item3'], placeholder: "-- Please select on --" } },
+    { name: 's1', title: '下拉框1', type: 'dropdown', param: { valid: { require: true }, list: ['item1', 'item2', 'item3'], placeholder: "Please select" } },
+    { name: 's1', title: '下拉框别名', type: 'select', param: { valid: { require: true }, list: ['item1', 'item2', 'item3'], placeholder: "Please choose" } },
+    {
+      name: 'combo1', title: '组合框', type: 'combobox',
+      show: {
+        format: "hi, {1}!"
+      },
+      param: {
+        valid: { require: true, minlength: 1 },
+        list: ['Jone', 'Linda', 'Jackey Bom'],
+        placeholder: "name here",
+      }
+    },
     { name: 'tags1', title: '多标签1', type: 'tags', param: { valid: { require: true, minlength: 1 }, list: ['item1', 'item2', 'item3'] } },
     { name: 'star1', title: '评价1', type: 'star' },
     { name: 'star2', title: '评价2', type: 'star', param: { valid: { require: true } } },
