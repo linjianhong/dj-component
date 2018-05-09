@@ -140,9 +140,9 @@
         if (changes.initValue) $scope.value = changes.initValue.currentValue;
         getValueText($scope.configs, $scope.value);
       }
-      function getValueText(configs, value){
+      function getValueText(configs, value) {
         $scope.text = '';
-        if(!configs ||! value) return;
+        if (!configs || !value) return;
         initDropdownList(configs.param, $http, $q).then(list => {
           var item = list.find(item => item.value == value || item == value);
           if (item) {
@@ -211,9 +211,9 @@
         if (changes.initValue) $scope.value = changes.initValue.currentValue;
         getValueText($scope.configs, $scope.value);
       }
-      function getValueText(configs, value){
+      function getValueText(configs, value) {
         $scope.text = '';
-        if(!configs ||! value) return;
+        if (!configs || !value) return;
         initDropdownList(configs.param, $http, $q).then(list => {
           $scope.value = value.map(v => {
             var item = list.find(item => item.value == v || item == v);
@@ -311,7 +311,7 @@
       </div>
       `,
 
-      
+
     /** 多选下拉框 */
     "mulity-dropdown": `
       <div class="flex prompt-top" dj-form-default-tip></div>
@@ -385,25 +385,32 @@
 
   var theComponentDefines = [
     { name: "input" },
+    { name: "textarea", controller: "input" },
     { name: "dropdown", showTemplate: "dropdown-show", showController: "dropdown-show" },
     { name: "combobox", showTemplate: "input-show", showController: "dropdown-show" },
-    { name: "textarea", controller: "input" },
     { name: "tags" },
     { name: "radio" },
     { name: "star", controller: "input" },
     { name: "check-box" },
     { name: "imgs-uploader" },
   ];
+  /** 强制引用 */
+  var theComponentDefineRefs = {
+    select: "dropdown"
+  }
 
 
-  function getSafeType(type) {
+  function getSafeDefine(type) {
+    if(theComponentDefineRefs[type]) return getSafeDefine(theComponentDefineRefs[type]);
     var def = theComponentDefines.find(item => item.name == type);
-    if(!def) def = theComponentDefines.find(item => item.name == 'input');
-    return def.name;
+    if (!def) def = theComponentDefines.find(item => item.name == 'input');
+    return def;
+  }
+  function getSafeType(type) {
+    return getSafeDefine(type).name;
   }
   function getTemplateEdit(type) {
-    var def = theComponentDefines.find(item => item.name == type);
-    if(!def) def = theComponentDefines.find(item => item.name == 'input');
+    var def = getSafeDefine(type);
     /** 强行定义的 */
     if (def.editTemplate) {
       return theTemplates[def.editTemplate];
@@ -415,8 +422,7 @@
     return theTemplates["input"]
   }
   function getTemplateShow(type) {
-    var def = theComponentDefines.find(item => item.name == type);
-    if(!def) def = theComponentDefines.find(item => item.name == 'input');
+    var def = getSafeDefine(type);
     /** 强行定义的 */
     if (def.showTemplate) {
       return theTemplates[def.showTemplate];
@@ -427,8 +433,20 @@
     }
     return theTemplates["input-show"]
   }
+  function getControllerEdit(type) {
+    var def = getSafeDefine(type);
+    /** 强行定义的 */
+    if (def.editController) {
+      return theControlers[def.editController];
+    }
+    /** 默认定义的 */
+    if (theControlers[type]) {
+      return theControlers[type];
+    }
+    return theControlers.empty;
+  }
   function getControllerShow(type) {
-    var def = theComponentDefines.find(item => item.name == type);
+    var def = getSafeDefine(type);
     /** 强行定义的 */
     if (def.showController) {
       return theControlers[def.showController];
@@ -443,9 +461,6 @@
   /** 默认模板注入，用于插座调用 */
   theModule.value("DjFormDefaultTemplate", theTemplates);
   theModule.value("DjFormDefaultDefine", {
-    templates: theTemplates,
-    defines: theComponentDefines,
-    controlers: theControlers,
     getSafeType,
     getTemplateEdit,
     getTemplateShow
@@ -471,7 +486,7 @@
         onChange: '&'
       },
       template: "",
-      controller: theControlers[conponent.controller || conponent.name || 'empty']
+      controller: getControllerEdit(conponent.name)
     });
     /** 所有显示组件 */
     theModule.component(directiveNormalize(`${DJ_FORM_DEFAULT.pre}${conponent.name}-show`), {
