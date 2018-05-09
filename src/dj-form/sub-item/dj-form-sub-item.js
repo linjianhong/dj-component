@@ -16,6 +16,7 @@
    * @param {*} param 要初始化列表的参数，false 表示用已有的数据(自己都忘了什么时候用false!，看看使用者吧)
    */
   function initDropdownList(param, $http, $q) {
+    console.log('获取下拉列表, param =', param);
     if (param === false && initDropdownList.result) {
       return $q.when(initDropdownList.result);
     }
@@ -113,7 +114,7 @@
           $scope.value = changes.initValue.currentValue;
           configReady.ready(configs => {
             // 不重新获取（当值初始化，或被上级再改变时）
-            initDropdownList(false).then(list => {
+            initDropdownList(false, $http, $q).then(list => {
               $scope.list = $scope.list_full = list;
               calcSelected();
             });
@@ -134,30 +135,20 @@
 
     /** 下拉框 - 显示 */
     "dropdown-show": ["$scope", "$timeout", "$http", "$q", "DjWaiteReady", function ($scope, $timeout, $http, $q, DjWaiteReady) {
-      var configReady = new DjWaiteReady();
-      $scope.value = '';
-
       this.$onChanges = (changes) => {
-        if (changes.configs) {
-          var configs = changes.configs.currentValue;
-          if (!configs || !configs.param) return;
-          /** 通知配置已初始化 */
-          initDropdownList(configs.param, $http, $q).then(list => {
-            $scope.list = $scope.list_full = list;
-            configReady.resolve(configs);
-          }).catch(e => {
-            $scope.list = $scope.list_full = [];
-          });
-        }
-        if (changes.initValue) {
-          var value = changes.initValue.currentValue;
-          configReady.ready(configs => {
-            var item = $scope.list.find(item => item.value == value || item == value);
-            if (item) {
-              $scope.value = item.value || item;
-            }
-          });
-        }
+        if (changes.configs) $scope.configs = changes.configs.currentValue;
+        if (changes.initValue) $scope.value = changes.initValue.currentValue;
+        getValueText($scope.configs, $scope.value);
+      }
+      function getValueText(configs, value){
+        $scope.text = '';
+        if(!configs ||! value) return;
+        initDropdownList(configs.param, $http, $q).then(list => {
+          var item = list.find(item => item.value == value || item == value);
+          if (item) {
+            $scope.text = item.title || item;
+          }
+        });
       }
     }],
 
@@ -214,35 +205,21 @@
 
     /** 下拉框 - 显示 */
     "tags-show": ["$scope", "$http", "$q", "DjWaiteReady", function ($scope, $http, $q, DjWaiteReady) {
-      var configReady = new DjWaiteReady();
       $scope.value = [];
-
       this.$onChanges = (changes) => {
-        if (changes.configs) {
-          var configs = changes.configs.currentValue;
-          if (!configs || !configs.param) return;
-          //console.log("多选标签, configs=", configs);
-          /** 通知配置已初始化 */
-          initDropdownList(configs.param, $http, $q).then(list => {
-            $scope.list = $scope.list_full = list;
-            configReady.resolve(configs);
-          }).catch(e => {
-            $scope.list = $scope.list_full = [];
-          });
-        }
-        if (changes.initValue) {
-          var value = changes.initValue.currentValue;
-          if (!angular.isArray(value)) return;
-          configReady.ready(configs => {
-            $scope.value = value.map(v => {
-              var item = $scope.list.find(item => item.value == v || item == v);
-              if (item) {
-                return item.value || item;
-              }
-              return v;
-            })
-          });
-        }
+        if (changes.configs) $scope.configs = changes.configs.currentValue;
+        if (changes.initValue) $scope.value = changes.initValue.currentValue;
+        getValueText($scope.configs, $scope.value);
+      }
+      function getValueText(configs, value){
+        $scope.text = '';
+        if(!configs ||! value) return;
+        initDropdownList(configs.param, $http, $q).then(list => {
+          $scope.value = value.map(v => {
+            var item = list.find(item => item.value == v || item == v);
+            return item && item.value || item || v;
+          })
+        });
       }
     }],
 
@@ -419,8 +396,14 @@
   ];
 
 
+  function getSafeType(type) {
+    var def = theComponentDefines.find(item => item.name == type);
+    if(!def) def = theComponentDefines.find(item => item.name == 'input');
+    return def.name;
+  }
   function getTemplateEdit(type) {
     var def = theComponentDefines.find(item => item.name == type);
+    if(!def) def = theComponentDefines.find(item => item.name == 'input');
     /** 强行定义的 */
     if (def.editTemplate) {
       return theTemplates[def.editTemplate];
@@ -433,6 +416,7 @@
   }
   function getTemplateShow(type) {
     var def = theComponentDefines.find(item => item.name == type);
+    if(!def) def = theComponentDefines.find(item => item.name == 'input');
     /** 强行定义的 */
     if (def.showTemplate) {
       return theTemplates[def.showTemplate];
@@ -462,6 +446,7 @@
     templates: theTemplates,
     defines: theComponentDefines,
     controlers: theControlers,
+    getSafeType,
     getTemplateEdit,
     getTemplateShow
   });

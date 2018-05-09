@@ -74,12 +74,14 @@ dj-form-default-item-dropdown:after {
   -webkit-transform: matrix(0.71, 0.71, -0.71, 0.71, 0, 0);
   transform: matrix(0.71, 0.71, -0.71, 0.71, 0, 0);
   position: relative;
-  top: -2px;
   position: absolute;
-  top: 50%;
   right: 15px;
   margin-top: -4px;
 }
+dj-form-default-item-dropdown.normal:after {
+  bottom: 1em;
+}
+
 
 
 
