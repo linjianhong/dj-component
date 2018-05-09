@@ -1,6 +1,11 @@
 body { padding: 0; margin: 0; }
 * { box-sizing: border-box; }
 
+input, select {
+  -webkit-appearance: none;
+  outline: 0;
+}
+
 
 /* 弹性布局样式 */
 .flex, .flex-v, .flex-cc {
