@@ -1,10 +1,8 @@
 /* 动态表单子组件 */
-dj-form-item-host > * > input ,
-dj-form-item-host > * > textarea ,
-dj-form-item-host > * > djui-input ,
-dj-form-item-host > * > uib-dropdown ,
-dj-form-item-host > * > select,
-dj-form-item-host > * > * > select {
+dj-form-item-host * {
+  font-size: inherit;
+}
+dj-form-item-host.mode-edit > * > .b {
   line-height: 2.2em;
   width: 100%;
   height: 2.2em;
@@ -13,7 +11,6 @@ dj-form-item-host > * > * > select {
   padding-left: 1em;
   -webkit-appearance: none;
   outline: 0;
-  font-size: inherit;
 }
 dj-form-default-item-textarea > textarea{
   min-height: 5em;
@@ -25,12 +22,6 @@ dj-form-item-host > .ng-invalid > uib-dropdown ,
 dj-form-item-host > .ng-invalid > select,
 dj-form-item-host > .ng-invalid > * > select {
   border: 1px solid #ff000033;
-}
-
-
-dj-form-item-input > djui-input {
-  width: 100%;
-  padding: 1em;
 }
 
 dj-form-item-host .prompt-top {
@@ -77,14 +68,34 @@ dj-form-default-item-dropdown:after {
   position: absolute;
   right: 15px;
   margin-top: -4px;
+  bottom: 1.1em;
 }
+
+/* 下拉框 */
 dj-form-default-item-dropdown.normal:after {
   bottom: 1em;
 }
+dj-form-default-item-dropdown > .inputs {
+  position: relative;
+}
+dj-form-default-item-dropdown > .inputs > .placeholder {
+  color: #888888;
+}
+dj-form-default-item-dropdown > .inputs > select {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0 .8em;
+  border: solid 0;
+}
+dj-form-default-item-dropdown > .inputs > select.empty {
+  background: transparent;
+}
 
 
-
-
+/* 组合框 */
 dj-form-default-item-combobox > .inputs {
   position: relative;
 }
@@ -93,6 +104,7 @@ dj-form-default-item-combobox > .inputs > select {
   position: absolute;
   left: 0;
   top: 0;
+  width: 100%;
   height: 100%;
 }
 
@@ -109,7 +121,8 @@ dj-form-default-item-combobox > .inputs > .caret-down {
   top: 0;
   width: 2em;
   height: 100%;
-  padding: .6em;
+  padding: .5em;
+  background-color: rgba(0,0,0,0.1);
 }
 .caret-down > *{
   border: solid .5em transparent;
@@ -123,31 +136,12 @@ dj-form-default-item-combobox > .inputs > select {
 }
 
 
-/* 下拉框*/
-dj-form-item-select > select {
-  width: 100%;
-  position: relative;
-  z-index: 1;
+/* 显示通用 */
+dj-form-item-host.mode-show > * > * > .a {
+
 }
-
-dj-form-item-select > select:after {
-  content: " ";
-  display: inline-block;
-  height: 6px;
-  width: 6px;
-  border-width: 2px 2px 0 0;
-  border-color: #C8C8CD;
-  border-style: solid;
-  -webkit-transform: matrix(0.71, 0.71, -0.71, 0.71, 0, 0);
-  transform: matrix(0.71, 0.71, -0.71, 0.71, 0, 0);
-  position: relative;
-  top: -2px;
-  position: absolute;
-  top: 50%;
-  right: 15px;
-  margin-top: -4px;
+dj-form-item-host.mode-show > * > * > .b {
+  padding-left: 0.8em;
 }
-
-
 
 
