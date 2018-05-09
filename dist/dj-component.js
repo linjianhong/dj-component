@@ -76,9 +76,9 @@ angular.module('dj-ui', ['ngAnimate']);
         $element.html("");
         return;
       }
-      var eleType = configs.type || 'input';
+      var eleType = DjFormDefaultDefine.getSafeType(configs.type);
       var eleName = configs.pre + eleType;
-      var css = configs.css.hostEdit || configs.css.host || '';
+      var css = configs.css.hostEdit || configs.css.host || 'normal';
       var template = '\n        <' + eleName + '\n          class="' + css + ' {{dirty&&\'ng-dirty\'||\'\'}} {{!theValid.valid&&\'ng-invalid\'||\'\'}}"\n          configs="$ctrl.configs"\n          init-value="initValue"\n          on-change="onChange(value)"\n          invalid-text="theValid.tip"\n          dj-require="theValid.require"\n          dj-valid="theValid.valid"\n          dj-dirty="theValid.dirty"\n        ></' + eleName + '>\n      ';
       $element.html(template);
       var childElement = $compile($element.contents())($scope);
@@ -100,8 +100,9 @@ angular.module('dj-ui', ['ngAnimate']);
       valueReady: false,
       setConfig: function setConfig(configs) {
         // console.log("数据校验, configs = ", configs);
-        if (!configs) return;
         theValid.configs = configs;
+        if (!configs) return;
+        if (!theValid.configs.param) theValid.configs.param = {};
         theValid.configReady = true;
         theValid.calc();
       },
@@ -125,9 +126,8 @@ angular.module('dj-ui', ['ngAnimate']);
       /** 计算，验证数据是否有效，同时，设置提示文本 */
       calc: function calc() {
         if (!theValid.configReady || !theValid.valueReady) return;
-        var valid = theValid.configs.param && theValid.configs.param.valid || theValid.configs.valid || {};
-
-        var invalid = angular.extend({ required: "不可为空" }, theValid.configs.invalid);
+        var valid = theValid.configs.param.valid || theValid.configs.valid || {};
+        var invalid = angular.extend({ required: "required" }, theValid.configs.invalid, theValid.configs.param.invalid);
 
         if (valid.minLength) valid.minlength = valid.minlength || valid.minLength; // 允许名字兼容
         if (valid.maxLength) valid.maxlength = valid.maxlength || valid.maxLength; // 允许名字兼容
@@ -284,9 +284,9 @@ angular.module('dj-ui', ['ngAnimate']);
       }
 
       /** 开始编译子组件 */
-      var eleType = configs.type || 'input';
+      var eleType = DjFormDefaultDefine.getSafeType(configs.type);
       var eleName = configs.pre + eleType;
-      var css = configs.css.hostShow || configs.css.host || '';
+      var css = configs.css.hostShow || configs.css.host || 'normal';
       var template = '\n        <' + eleName + '-show\n          class="' + css + '"\n          configs="$ctrl.configs"\n          init-value="$ctrl.initValue"\n        ></' + eleName + '-show>\n      ';
       $element.html(template);
       var childElement = $compile($element.contents())($scope);
@@ -342,7 +342,7 @@ angular.module('dj-ui', ['ngAnimate']);
             theMode = $scope.mode = mode;
             $scope.stop = true;
             var theValue = $scope.memValue || {};
-            console.log("有 mode 改变: ", theMode, " => ", mode, ", memValue=", theValue);
+            //console.log("有 mode 改变: ", theMode, " => ", mode, ", memValue=", theValue);
             if (!theChanges.configs) theChanges.configs = {};
             if (!theChanges.configs.currentValue) theChanges.configs.currentValue = $scope.configs;
             if (!theChanges.initValues) theChanges.initValues = {};
@@ -892,7 +892,7 @@ angular.module('dj-ui', ['ngAnimate']);
 
     this.$onChanges = function (changes) {
       if (changes.mode) {
-        console.log("星星， mode=", changes.mode.currentValue);
+        //console.log("星星， mode=", changes.mode.currentValue);
         $scope.mode = changes.mode.currentValue || "";
       }
       if (changes.max) {
@@ -922,7 +922,7 @@ angular.module('dj-ui', ['ngAnimate']);
 
     $scope.click = function (value) {
       if ($scope.mode == "show") return;
-      console.log("星星", value);
+      //console.log("星星", value)
       $scope.value = value;
       _this7.onChange({ value: value });
     };
@@ -1093,16 +1093,17 @@ angular.module('dj-ui', ['ngAnimate']);
    * @param {*} param 要初始化列表的参数，false 表示用已有的数据(自己都忘了什么时候用false!，看看使用者吧)
    */
   function initDropdownList(param, $http, $q) {
+    //console.log('获取下拉列表, param =', param);
     if (param === false && initDropdownList.result) {
       return $q.when(initDropdownList.result);
     }
     if (!param.list) return $q.when(initDropdownList.result = []);
     if (angular.isString(param.list)) {
       return $http.post('获取下拉列表/' + param.list, {}).then(function (json) {
-        console.log('获取下拉列表, json =', json);
+        //console.log('获取下拉列表, json =', json);
         return $q.when(initDropdownList.result = json.list);
       }).catch(function (e) {
-        console.log('获取下拉列表, 失败: ', e);
+        //console.log('获取下拉列表, 失败: ', e);
         return initDropdownList.result = $q.reject([]);
       });
     }
@@ -1191,7 +1192,7 @@ angular.module('dj-ui', ['ngAnimate']);
           $scope.value = changes.initValue.currentValue;
           configReady.ready(function (configs) {
             // 不重新获取（当值初始化，或被上级再改变时）
-            initDropdownList(false).then(function (list) {
+            initDropdownList(false, $http, $q).then(function (list) {
               $scope.list = $scope.list_full = list;
               calcSelected();
             });
@@ -1213,33 +1214,23 @@ angular.module('dj-ui', ['ngAnimate']);
 
     /** 下拉框 - 显示 */
     "dropdown-show": ["$scope", "$timeout", "$http", "$q", "DjWaiteReady", function ($scope, $timeout, $http, $q, DjWaiteReady) {
-      var configReady = new DjWaiteReady();
-      $scope.value = '';
-
       this.$onChanges = function (changes) {
-        if (changes.configs) {
-          var configs = changes.configs.currentValue;
-          if (!configs || !configs.param) return;
-          /** 通知配置已初始化 */
-          initDropdownList(configs.param, $http, $q).then(function (list) {
-            $scope.list = $scope.list_full = list;
-            configReady.resolve(configs);
-          }).catch(function (e) {
-            $scope.list = $scope.list_full = [];
-          });
-        }
-        if (changes.initValue) {
-          var value = changes.initValue.currentValue;
-          configReady.ready(function (configs) {
-            var item = $scope.list.find(function (item) {
-              return item.value == value || item == value;
-            });
-            if (item) {
-              $scope.value = item.value || item;
-            }
-          });
-        }
+        if (changes.configs) $scope.configs = changes.configs.currentValue;
+        if (changes.initValue) $scope.value = changes.initValue.currentValue;
+        getValueText($scope.configs, $scope.value);
       };
+      function getValueText(configs, value) {
+        $scope.text = '';
+        if (!configs || !value) return;
+        initDropdownList(configs.param, $http, $q).then(function (list) {
+          var item = list.find(function (item) {
+            return item.value == value || item == value;
+          });
+          if (item) {
+            $scope.text = item.title || item;
+          }
+        });
+      }
     }],
 
     /** 下拉编辑框 */
@@ -1295,38 +1286,24 @@ angular.module('dj-ui', ['ngAnimate']);
 
     /** 下拉框 - 显示 */
     "tags-show": ["$scope", "$http", "$q", "DjWaiteReady", function ($scope, $http, $q, DjWaiteReady) {
-      var configReady = new DjWaiteReady();
       $scope.value = [];
-
       this.$onChanges = function (changes) {
-        if (changes.configs) {
-          var configs = changes.configs.currentValue;
-          if (!configs || !configs.param) return;
-          //console.log("多选标签, configs=", configs);
-          /** 通知配置已初始化 */
-          initDropdownList(configs.param, $http, $q).then(function (list) {
-            $scope.list = $scope.list_full = list;
-            configReady.resolve(configs);
-          }).catch(function (e) {
-            $scope.list = $scope.list_full = [];
-          });
-        }
-        if (changes.initValue) {
-          var value = changes.initValue.currentValue;
-          if (!angular.isArray(value)) return;
-          configReady.ready(function (configs) {
-            $scope.value = value.map(function (v) {
-              var item = $scope.list.find(function (item) {
-                return item.value == v || item == v;
-              });
-              if (item) {
-                return item.value || item;
-              }
-              return v;
-            });
-          });
-        }
+        if (changes.configs) $scope.configs = changes.configs.currentValue;
+        if (changes.initValue) $scope.value = changes.initValue.currentValue;
+        getValueText($scope.configs, $scope.value);
       };
+      function getValueText(configs, value) {
+        $scope.text = '';
+        if (!configs || !value) return;
+        initDropdownList(configs.param, $http, $q).then(function (list) {
+          $scope.value = value.map(function (v) {
+            var item = list.find(function (item) {
+              return item.value == v || item == v;
+            });
+            return item && item.value || item || v;
+          });
+        });
+      }
     }],
 
     /** 单选框 */
@@ -1391,12 +1368,27 @@ angular.module('dj-ui', ['ngAnimate']);
     "imgs-uploader-show": '\n      <imgs-uploader class="padding-v-1 {{$ctrl.configs.css.hostBodyShow}}"\n        imgs="$ctrl.initValue"\n        mode="show"\n      ></imgs-uploader>'
   };
 
-  var theComponentDefines = [{ name: "input" }, { name: "dropdown", showTemplate: "dropdown-show", showController: "dropdown-show" }, { name: "combobox", showTemplate: "input-show", showController: "dropdown-show" }, { name: "textarea", controller: "input" }, { name: "tags" }, { name: "radio" }, { name: "star", controller: "input" }, { name: "check-box" }, { name: "imgs-uploader" }];
+  var theComponentDefines = [{ name: "input" }, { name: "textarea", controller: "input" }, { name: "dropdown", showTemplate: "dropdown-show", showController: "dropdown-show" }, { name: "combobox", showTemplate: "input-show", showController: "dropdown-show" }, { name: "tags" }, { name: "radio" }, { name: "star", controller: "input" }, { name: "check-box" }, { name: "imgs-uploader" }];
+  /** 强制引用 */
+  var theComponentDefineRefs = {
+    select: "dropdown"
+  };
 
-  function getTemplateEdit(type) {
+  function getSafeDefine(type) {
+    if (theComponentDefineRefs[type]) return getSafeDefine(theComponentDefineRefs[type]);
     var def = theComponentDefines.find(function (item) {
       return item.name == type;
     });
+    if (!def) def = theComponentDefines.find(function (item) {
+      return item.name == 'input';
+    });
+    return def;
+  }
+  function getSafeType(type) {
+    return getSafeDefine(type).name;
+  }
+  function getTemplateEdit(type) {
+    var def = getSafeDefine(type);
     /** 强行定义的 */
     if (def.editTemplate) {
       return theTemplates[def.editTemplate];
@@ -1408,9 +1400,7 @@ angular.module('dj-ui', ['ngAnimate']);
     return theTemplates["input"];
   }
   function getTemplateShow(type) {
-    var def = theComponentDefines.find(function (item) {
-      return item.name == type;
-    });
+    var def = getSafeDefine(type);
     /** 强行定义的 */
     if (def.showTemplate) {
       return theTemplates[def.showTemplate];
@@ -1421,10 +1411,20 @@ angular.module('dj-ui', ['ngAnimate']);
     }
     return theTemplates["input-show"];
   }
+  function getControllerEdit(type) {
+    var def = getSafeDefine(type);
+    /** 强行定义的 */
+    if (def.editController) {
+      return theControlers[def.editController];
+    }
+    /** 默认定义的 */
+    if (theControlers[type]) {
+      return theControlers[type];
+    }
+    return theControlers.empty;
+  }
   function getControllerShow(type) {
-    var def = theComponentDefines.find(function (item) {
-      return item.name == type;
-    });
+    var def = getSafeDefine(type);
     /** 强行定义的 */
     if (def.showController) {
       return theControlers[def.showController];
@@ -1439,9 +1439,7 @@ angular.module('dj-ui', ['ngAnimate']);
   /** 默认模板注入，用于插座调用 */
   theModule.value("DjFormDefaultTemplate", theTemplates);
   theModule.value("DjFormDefaultDefine", {
-    templates: theTemplates,
-    defines: theComponentDefines,
-    controlers: theControlers,
+    getSafeType: getSafeType,
     getTemplateEdit: getTemplateEdit,
     getTemplateShow: getTemplateShow
   });
@@ -1465,7 +1463,7 @@ angular.module('dj-ui', ['ngAnimate']);
         onChange: '&'
       },
       template: "",
-      controller: theControlers[conponent.controller || conponent.name || 'empty']
+      controller: getControllerEdit(conponent.name)
     });
     /** 所有显示组件 */
     theModule.component(directiveNormalize('' + DJ_FORM_DEFAULT.pre + conponent.name + '-show'), {
@@ -1482,7 +1480,7 @@ angular.module('dj-ui', ['ngAnimate']);
   theModule.directive(directiveNormalize('dj-form-default-tip'), function () {
     return {
       restrict: 'A',
-      template: '\n        <div class="flex title" dj-form-default-tip-mini></div>\n        <div class="prompt error">{{$ctrl.djValid && \' \' || $ctrl.configs.valid.errorTip || \'\u6570\u636E\u4E0D\u5408\u6CD5\'}}</div>\n      '
+      template: '\n        <div class="flex title" dj-form-default-tip-mini></div>\n        <div class="prompt error">{{$ctrl.djValid && \' \' || $ctrl.invalidText || \'incorrect\'}}</div>\n      '
     };
   }).directive(directiveNormalize('dj-form-default-tip-mini'), function () {
     return {
@@ -2883,7 +2881,7 @@ angular.module('dj-ui', ['ngAnimate']);
       return DjPop.confirm("您确认要删除当前图片?").then(function (a) {
         imgs.splice(n, 1);
         $scope.imgList = angular.merge([], imgs);;
-        console.log("删除加图片", $scope.imgList);
+        //console.log("删除图片", $scope.imgList);
         _this15.updateImg({ imgs: $scope.imgList });
       });
     };

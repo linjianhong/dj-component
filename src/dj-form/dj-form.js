@@ -51,7 +51,7 @@
             theMode = $scope.mode = mode;
             $scope.stop = true;
             var theValue = $scope.memValue || {};
-            console.log("有 mode 改变: ", theMode, " => ", mode, ", memValue=", theValue);
+            //console.log("有 mode 改变: ", theMode, " => ", mode, ", memValue=", theValue);
             if (!theChanges.configs) theChanges.configs = {};
             if (!theChanges.configs.currentValue) theChanges.configs.currentValue = $scope.configs;
             if (!theChanges.initValues) theChanges.initValues = {};

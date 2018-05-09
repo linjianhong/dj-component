@@ -68,7 +68,7 @@
       return DjPop.confirm("您确认要删除当前图片?").then(a => {
         imgs.splice(n, 1);
         $scope.imgList = angular.merge([], imgs);;
-        console.log("删除加图片", $scope.imgList);
+        //console.log("删除图片", $scope.imgList);
         this.updateImg({ imgs: $scope.imgList });
       });
     }

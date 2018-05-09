@@ -16,17 +16,17 @@
    * @param {*} param 要初始化列表的参数，false 表示用已有的数据(自己都忘了什么时候用false!，看看使用者吧)
    */
   function initDropdownList(param, $http, $q) {
-    console.log('获取下拉列表, param =', param);
+    //console.log('获取下拉列表, param =', param);
     if (param === false && initDropdownList.result) {
       return $q.when(initDropdownList.result);
     }
     if (!param.list) return $q.when(initDropdownList.result = []);
     if (angular.isString(param.list)) {
       return $http.post('获取下拉列表/' + param.list, {}).then(json => {
-        console.log('获取下拉列表, json =', json);
+        //console.log('获取下拉列表, json =', json);
         return $q.when(initDropdownList.result = json.list);
       }).catch(e => {
-        console.log('获取下拉列表, 失败: ', e);
+        //console.log('获取下拉列表, 失败: ', e);
         return initDropdownList.result = $q.reject([]);
       })
     }

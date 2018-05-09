@@ -25,7 +25,7 @@
   function ctrl($scope, $element) {
     this.$onChanges = (changes) => {
       if (changes.mode) {
-        console.log("星星， mode=", changes.mode.currentValue);
+        //console.log("星星， mode=", changes.mode.currentValue);
         $scope.mode = changes.mode.currentValue || "";
       }
       if (changes.max) {
@@ -53,7 +53,7 @@
 
     $scope.click = (value) => {
       if ($scope.mode == "show") return;
-      console.log("星星", value)
+      //console.log("星星", value)
       $scope.value = value;
       this.onChange({ value })
     }
