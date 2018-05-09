@@ -100,8 +100,9 @@
       valueReady: false,
       setConfig: (configs) => {
         // console.log("数据校验, configs = ", configs);
-        if (!configs) return;
         theValid.configs = configs;
+        if (!configs) return;
+        if (!theValid.configs.param) theValid.configs.param = {};
         theValid.configReady = true;
         theValid.calc();
       },
@@ -127,10 +128,8 @@
       /** 计算，验证数据是否有效，同时，设置提示文本 */
       calc: () => {
         if (!theValid.configReady || !theValid.valueReady) return;
-        var valid = theValid.configs.param && theValid.configs.param.valid
-          || theValid.configs.valid || {};
-
-        var invalid = angular.extend({ required: "不可为空" }, theValid.configs.invalid);
+        var valid = theValid.configs.param.valid || theValid.configs.valid || {};
+        var invalid = angular.extend({ required: "required" }, theValid.configs.invalid, theValid.configs.param.invalid);
 
         if (valid.minLength) valid.minlength = valid.minlength || valid.minLength; // 允许名字兼容
         if (valid.maxLength) valid.maxlength = valid.maxlength || valid.maxLength; // 允许名字兼容

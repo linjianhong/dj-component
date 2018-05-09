@@ -492,7 +492,7 @@
         restrict: 'A',
         template: `
         <div class="flex title" dj-form-default-tip-mini></div>
-        <div class="prompt error">{{$ctrl.djValid && ' ' || $ctrl.configs.valid.errorTip || '数据不合法'}}</div>
+        <div class="prompt error">{{$ctrl.djValid && ' ' || $ctrl.invalidText || 'incorrect'}}</div>
       `
       }
     })
