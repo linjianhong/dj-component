@@ -65,9 +65,9 @@
         $element.html("");
         return;
       }
-      var eleType = configs.type || 'input';
+      var eleType = DjFormDefaultDefine.getSafeType(configs.type);
       var eleName = configs.pre + eleType;
-      var css = configs.css.hostEdit || configs.css.host || '';
+      var css = configs.css.hostEdit || configs.css.host || 'normal';
       var template = `
         <${eleName}
           class="${css} {{dirty&&'ng-dirty'||''}} {{!theValid.valid&&'ng-invalid'||''}}"
@@ -290,9 +290,9 @@
       }
 
       /** 开始编译子组件 */
-      var eleType = configs.type || 'input';
+      var eleType = DjFormDefaultDefine.getSafeType(configs.type);
       var eleName = configs.pre + eleType;
-      var css = configs.css.hostShow || configs.css.host || '';
+      var css = configs.css.hostShow || configs.css.host || 'normal';
       var template = `
         <${eleName}-show
           class="${css}"
