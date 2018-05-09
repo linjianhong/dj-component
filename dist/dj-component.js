@@ -621,7 +621,7 @@ angular.module('dj-ui', ['ngAnimate']);
       //angular.element(element).append(dlg[0]);
       var listener = scopeDjPop.$on("dj-pop-box-close", function (event, data) {
         event.preventDefault();
-        closeDjg(data);
+        closeDjg({ btnName: data, param: scopeDjPop.param });
       });
       //显示时按浏览器的后退按钮：关闭对话框
       var listener2 = scopeDjPop.$on("$locationChangeStart", function (event) {
@@ -709,6 +709,7 @@ angular.module('dj-ui', ['ngAnimate']);
       var options = { param: { body: body, title: title, backClose: 1, cancel: { hide: 1 } } };
       if (angular.isObject(body)) {
         options = body;
+        if (!options.param) options = { param: options };
       }
       options.template = '<djui-dialog param="param"></djui-dialog>';
       return showComponent(options).then(function (btnName) {
@@ -723,6 +724,7 @@ angular.module('dj-ui', ['ngAnimate']);
       var options = { param: { body: body, title: title } };
       if (angular.isObject(body)) {
         options = body;
+        if (!options.param) options = { param: options };
       }
       options.template = '<djui-dialog param="param"></djui-dialog>';
       return showComponent(options).then(function (btnName) {
@@ -733,10 +735,26 @@ angular.module('dj-ui', ['ngAnimate']);
       });
     }
 
+    function input(title, text) {
+      var options = { param: { title: title, text: text } };
+      if (angular.isObject(title)) {
+        options = title;
+        if (!options.param) options = { param: options };
+      }
+      options.template = '<djui-dialog param="param"><djui-dialog-body><textarea class="djui-dialog-input" ng-model="param.text"></textarea></djui-dialog-body></djui-dialog>';
+      return showComponent(options).then(function (result) {
+        if (!result || !result.param || result.btnName != "OK") {
+          return $q.reject(result);
+        }
+        return result.param.text;
+      });
+    }
+
     return {
       show: show,
       alert: alert,
       confirm: confirm,
+      input: input,
       toast: toast,
       gallery: gallery
     };

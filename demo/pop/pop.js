@@ -7,6 +7,7 @@ angular.module('my-app', ['dj-form', 'dj-ui', 'dj-pop']).component('myApp', {
       <div class="btn btn-1" ng-click="alert2()">Alert with params</div>
       <div class="btn btn-2" ng-click="confirm()">Confirm</div>
       <div class="btn btn-2" ng-click="confirm2()">Confirm with params</div>
+      <div class="btn btn-2" ng-click="input()">Input</div>
       <div class="btn btn-3" ng-click="toast()">toast</div>
       <div class="btn btn-4" ng-click="gallery()">gallery</div>
       <div class="djui-btn disabled" ng-click="comment()">comment</div>
@@ -46,6 +47,13 @@ angular.module('my-app', ['dj-form', 'dj-ui', 'dj-pop']).component('myApp', {
     };
     $scope.confirm = function () {
       DjPop.confirm('Are you sure?', '标题-确认').then(function (res) {
+        console.log("已确认: ", res);
+      }).catch(function (res) {
+        console.log("已取消或错误: ", res);
+      })
+    };
+    $scope.input = function () {
+      DjPop.input('Input some text').then(function (res) {
         console.log("已确认: ", res);
       }).catch(function (res) {
         console.log("已取消或错误: ", res);

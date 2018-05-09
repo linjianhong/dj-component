@@ -69,9 +69,11 @@ add dependencies in `bower.json` like this:
 
 ## Pop
 
-* gallery
+* alert
+* confirm
+* input
 * toast
-* show user component
+* gallery
 * comment
 
 

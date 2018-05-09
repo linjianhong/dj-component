@@ -1,6 +1,6 @@
 {
   "name": "dj-component",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "authors": [
     "linjianhong <linjianhong@github.com>"
   ],
@@ -20,8 +20,8 @@
     "ui"
   ],
   "dependencies": {
-    "angular": "1.6.1",
-    "angular-animate": "1.6.1"
+    "angular": "^1.6.0",
+    "angular-animate": "^1.6.0"
   },
   "license": "dj",
   "homepage": "https://github.com/linjianhong/dj-component"
