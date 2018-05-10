@@ -106,7 +106,7 @@
           </div>
         </div>
         <div class="btns transclude-footer">
-          <div class="box-primary btn" ng-click="openPublist()">
+          <div class="djui-btn block primary" ng-click="openPublist()">
             发贴
           </div>
         </div>

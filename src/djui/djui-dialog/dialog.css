@@ -1,4 +1,10 @@
 
+djui-dialog {
+  font-size: 1.2em;
+}
+djui-dialog * {
+  font-size: inherit;
+}
 djui-dialog > .djui-dialog {
   display: inline-block;
 }
