@@ -30,7 +30,7 @@
     },
     api: {
       comment: {
-        root: "./comment/",
+        root: "comment/",
         li: "li",
         remove: "remove",
         add: "add",
@@ -117,7 +117,9 @@
       $transclude(function (clone) {
         //$transclude中接收的函数里的参数含有指令元素的内容(指令元素的内容就是指令内部的元素，也就是应该被transclude的内容)  
         //$element包含编译后的DOM元素(也就是把指令template进行了编译)，所以就可以在控制器中同时操作DOM元素和指令内容。  
-        var content_transcluded = clone.filter('dj-comment-content');
+        var content_transcluded = [].filter.call(clone, (item)=>{
+          return (item.tagName||"").toLowerCase() == 'dj-comment-content'
+        });
         if (content_transcluded.length > 0) {
           $scope.contentbody = content_transcluded[0].outerText;
         }
@@ -463,12 +465,11 @@
       `;
       function compileContent(str) {
         $timeout(function () {
-          //console.log("编译，$scope.$id =", $scope.$id);
+          console.log("编译，$scope.$id =", $scope.$id);
           var contentbody = str || defaultTemplate;
-          var ele = $compile(contentbody)($scope);
-          //ele = [].filter.call(ele, a => a.tagName)
-          var contentBlock = $element.find('.transclude-content');
-          contentBlock.html(ele);
+          var contentBlock = angular.element( $element[0].querySelector(".transclude-content"));
+          contentBlock.html(contentbody);
+          $compile(contentBlock.contents())($scope);
         });
       }
     }]

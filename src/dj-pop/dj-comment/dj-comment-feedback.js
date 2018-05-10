@@ -77,7 +77,7 @@
           if (!angular.isArray(item.feedback)) {
             item.feedback = [];
           }
-          item.feedback.push({ uid: me.uid, attr: { content } });
+          item.feedback.push({ uid: me.uid, attr: { fuid, content } });
           $scope.closeFeedback();
         }).catch(e => {
         });
