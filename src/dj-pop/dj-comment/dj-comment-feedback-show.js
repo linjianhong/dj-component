@@ -18,13 +18,13 @@
       <div class="feedback-top" ng-if="item.praise.length || item.feedback.length">
       </div>
       <div class="praise-list" ng-if="item.praise.length">
-        <i class="fa fa-heart-o"></i>
+        <span>&hearts;</span>
         <span class="" ng-repeat="uid in item.praise track by $index">{{user[uid].nickname}}</span>
       </div>
       <div class="feedback-list" ng-if="item.feedback.length">
         <div class="feedback-item" ng-mousedown="clickItem(item, feed.uid)" ng-repeat="feed in item.feedback track by $index">
           <span class="username">{{user[feed.uid].nickname}}</span>
-          <span ng-if="feed.attr.fuid && feed.attr.fuid!='0'">回复 <span class="username">{{user[feed.attr.fuid].nickname}}</span></span>
+          <span ng-if="feed.attr.fuid && feed.attr.fuid!='0'"> 回复 <span class="username">{{user[feed.attr.fuid].nickname}}</span></span>
           <span class="feedback-content">: {{feed.attr.content}}</span>
         </div>
       </div>

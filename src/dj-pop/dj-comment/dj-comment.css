@@ -47,7 +47,8 @@ input, button {
   padding: 0 .8em 0 .3em;
 }
 .dj-comment-box > .list > .item > .left > img {
-  width: 100%;
+  width: 3.6em;
+  height: 3.6em;
 }
 
 .dj-comment-box > .list > .item > .right {
@@ -104,7 +105,7 @@ input, button {
   word-break: break-all;
   background: #eeeeee;
   border-bottom: solid 1px #dddddd;
-  padding: .2em 0 0 .6em;
+  padding: .2em;
   color: #669;
 }
 .dj-comment-box .praise-list > span{
@@ -113,10 +114,10 @@ input, button {
 .dj-comment-box .feedback-list{
   background: #eeeeee;
   border-bottom: solid 1px #dddddd;
-  padding: .2em 0 0 .6em;
+  padding: .2em;
 }
 .dj-comment-box .username{
-  padding: 0 .6em 0 0;
+  /* padding: 0 .6em 0 0; */
   color: #669;
 }
 
@@ -202,12 +203,19 @@ input, button {
 }
 
 
+.dj-comment-box .feedback-item {
+  padding: .3em 0;
+}
+
+
+
+
 /* 表单 */
 dj-form-item-host.publish {
   border-bottom: solid 1px #eeeeee;
   margin-bottom: 0;
   font-size: 1em;
-  padding: 0 1em;
+  padding: .2em 0;
 }
 dj-form-item-host.publish.mode-show {
   border-bottom: solid 0;
