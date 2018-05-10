@@ -721,11 +721,11 @@ angular.module('dj-form').filter('formFormat', function () {
         if (!options.param) options = { param: options };
       }
       options.template = '<djui-dialog param="param"></djui-dialog>';
-      return showComponent(options).then(function (btnName) {
-        if (btnName != "OK") {
-          return $q.reject(btnName);
+      return showComponent(options).then(function (result) {
+        if (!result || result.btnName != "OK") {
+          return $q.reject(result);
         }
-        return btnName;
+        return result;
       });
     }
 
@@ -736,11 +736,11 @@ angular.module('dj-form').filter('formFormat', function () {
         if (!options.param) options = { param: options };
       }
       options.template = '<djui-dialog param="param"></djui-dialog>';
-      return showComponent(options).then(function (btnName) {
-        if (btnName != "OK") {
-          return $q.reject(btnName);
+      return showComponent(options).then(function (result) {
+        if (!result || result.btnName != "OK") {
+          return $q.reject(result);
         }
-        return btnName;
+        return result;
       });
     }
 
@@ -1376,7 +1376,7 @@ angular.module('dj-form').filter('formFormat', function () {
 
     /** 图片上传 */
     "imgs-uploader": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <imgs-uploader class="padding-v-1"\n        imgs="initValue"\n        update-img="onChange(imgs)"\n      ></imgs-uploader>',
-    "imgs-uploader-show": '\n      <div class="flex">\n        <imgs-uploader class="b padding-v-1 {{$ctrl.configs.css.hostBodyShow}}"\n          imgs="$ctrl.initValue"\n          mode="show"\n        ></imgs-uploader>\n      </div>\n    '
+    "imgs-uploader-show": '\n      <div class="flex">\n        <imgs-uploader class="ab padding-v-1 {{$ctrl.configs.css.hostBodyShow}}"\n          imgs="$ctrl.initValue"\n          mode="show"\n        ></imgs-uploader>\n      </div>\n    '
   };
 
   var theComponentDefines = [{ name: "input", showTemplate: "initValue-format-show" }, { name: "textarea", showTemplate: "textarea-show", controller: "input" }, { name: "dropdown", showTemplate: "text-format-show", showController: "dropdown-show" }, { name: "combobox", showTemplate: "initValue-format-show", showController: "dropdown-show" }, { name: "tags" }, { name: "radio" }, { name: "star", controller: "input" }, { name: "check-box" }, { name: "imgs-uploader" }];
@@ -1433,7 +1433,7 @@ angular.module('dj-form').filter('formFormat', function () {
     if (theControlers[type]) {
       return theControlers[type];
     }
-    return theControlers.empty;
+    return theControlers.input;
   }
   function getControllerShow(type) {
     var def = getSafeDefine(type);
@@ -1516,7 +1516,7 @@ angular.module('dj-form').filter('formFormat', function () {
       user: '<',
       clickItem: '&'
     },
-    template: '\n      <div class="feedback-top" ng-if="item.praise.length || item.feedback.length">\n      </div>\n      <div class="praise-list" ng-if="item.praise.length">\n        <i class="fa fa-heart-o"></i>\n        <span class="" ng-repeat="uid in item.praise track by $index">{{user[uid].nickname}}</span>\n      </div>\n      <div class="feedback-list" ng-if="item.feedback.length">\n        <div class="feedback-item" ng-mousedown="clickItem(item, feed.uid)" ng-repeat="feed in item.feedback track by $index">\n          <span class="username">{{user[feed.uid].nickname}}</span>\n          <span ng-if="feed.attr.fuid && feed.attr.fuid!=\'0\'">\u56DE\u590D <span class="username">{{user[feed.attr.fuid].nickname}}</span></span>\n          <span class="feedback-content">: {{feed.attr.content}}</span>\n        </div>\n      </div>\n    ',
+    template: '\n      <div class="feedback-top" ng-if="item.praise.length || item.feedback.length">\n      </div>\n      <div class="praise-list" ng-if="item.praise.length">\n        <span>&hearts;</span>\n        <span class="" ng-repeat="uid in item.praise track by $index">{{user[uid].nickname}}</span>\n      </div>\n      <div class="feedback-list" ng-if="item.feedback.length">\n        <div class="feedback-item" ng-mousedown="clickItem(item, feed.uid)" ng-repeat="feed in item.feedback track by $index">\n          <span class="username">{{user[feed.uid].nickname}}</span>\n          <span ng-if="feed.attr.fuid && feed.attr.fuid!=\'0\'"> \u56DE\u590D <span class="username">{{user[feed.attr.fuid].nickname}}</span></span>\n          <span class="feedback-content">: {{feed.attr.content}}</span>\n        </div>\n      </div>\n    ',
     controller: ["$scope", "$http", "$q", "$animateCss", function ($scope, $http, $q, $animateCss) {
       var _this12 = this;
 
@@ -1584,7 +1584,7 @@ angular.module('dj-form').filter('formFormat', function () {
           if (!angular.isArray(item.feedback)) {
             item.feedback = [];
           }
-          item.feedback.push({ uid: me.uid, attr: { content: content } });
+          item.feedback.push({ uid: me.uid, attr: { fuid: fuid, content: content } });
           $scope.closeFeedback();
         }).catch(function (e) {});
       };
@@ -1696,7 +1696,7 @@ angular.module('dj-form').filter('formFormat', function () {
     },
     api: {
       comment: {
-        root: "./comment/",
+        root: "comment/",
         li: "li",
         remove: "remove",
         add: "add",
@@ -1735,13 +1735,15 @@ angular.module('dj-form').filter('formFormat', function () {
       'content': '?djCommentContent',
       'footer': '?djCommentFooter'
     },
-    template: '\n      <div class="dj-comment-box flex-v flex-stretch">\n        <div class="header transclude-header"></div>\n        <div class="list">\n          <div class="item flex flex-top" ng-repeat="item in items track by $index" >\n            <div class="left flex-1">\n              <img ng-src="{{user[item.uid].headimgurl}}"/>\n            </div>\n            <div class="right flex-6">\n              <div class="main">\n                <dj-comment-item form="form" user="user" item="item" contentbody="contentbody"></dj-comment-item>\n                ' + template_ac_row + '\n              </div>\n              <dj-comment-feedback-show item="item" user="user" click-item="openFeedback($event, item, fuid)"></dj-comment-feedback-show>\n            </div>\n          </div>\n        </div>\n        <div class="btns transclude-footer">\n          <div class="box-primary btn" ng-click="openPublist()">\n            \u53D1\u8D34\n          </div>\n        </div>\n      </div>\n    ',
+    template: '\n      <div class="dj-comment-box flex-v flex-stretch">\n        <div class="header transclude-header"></div>\n        <div class="list">\n          <div class="item flex flex-top" ng-repeat="item in items track by $index" >\n            <div class="left flex-1">\n              <img ng-src="{{user[item.uid].headimgurl}}"/>\n            </div>\n            <div class="right flex-6">\n              <div class="main">\n                <dj-comment-item form="form" user="user" item="item" contentbody="contentbody"></dj-comment-item>\n                ' + template_ac_row + '\n              </div>\n              <dj-comment-feedback-show item="item" user="user" click-item="openFeedback($event, item, fuid)"></dj-comment-feedback-show>\n            </div>\n          </div>\n        </div>\n        <div class="btns transclude-footer">\n          <div class="djui-btn block primary" ng-click="openPublist()">\n            \u53D1\u8D34\n          </div>\n        </div>\n      </div>\n    ',
     controller: ["$scope", "$http", "$q", "$animateCss", "$transclude", "$element", "DjPop", function ($scope, $http, $q, $animateCss, $transclude, $element, DjPop) {
 
       $transclude(function (clone) {
         //$transclude中接收的函数里的参数含有指令元素的内容(指令元素的内容就是指令内部的元素，也就是应该被transclude的内容)  
         //$element包含编译后的DOM元素(也就是把指令template进行了编译)，所以就可以在控制器中同时操作DOM元素和指令内容。  
-        var content_transcluded = clone.filter('dj-comment-content');
+        var content_transcluded = [].filter.call(clone, function (item) {
+          return (item.tagName || "").toLowerCase() == 'dj-comment-content';
+        });
         if (content_transcluded.length > 0) {
           $scope.contentbody = content_transcluded[0].outerText;
         }
@@ -2080,12 +2082,11 @@ angular.module('dj-form').filter('formFormat', function () {
       var defaultTemplate = '\n      <dj-form\n        mode="\'show\'"\n        configs="$ctrl.form"\n        init-values="item.attr"\n      ></dj-form-show>\n      ';
       function compileContent(str) {
         $timeout(function () {
-          //console.log("编译，$scope.$id =", $scope.$id);
+          console.log("编译，$scope.$id =", $scope.$id);
           var contentbody = str || defaultTemplate;
-          var ele = $compile(contentbody)($scope);
-          //ele = [].filter.call(ele, a => a.tagName)
-          var contentBlock = $element.find('.transclude-content');
-          contentBlock.html(ele);
+          var contentBlock = angular.element($element[0].querySelector(".transclude-content"));
+          contentBlock.html(contentbody);
+          $compile(contentBlock.contents())($scope);
         });
       }
     }]
@@ -2274,7 +2275,7 @@ angular.module('dj-form').filter('formFormat', function () {
       this.$onChanges = function (changes) {
         if (changes.param) {
           $scope.param = changes.param.currentValue;
-          console.log("对话框, param = ", changes.param.currentValue);
+          // console.log("对话框, param = ", changes.param.currentValue);
         }
         animate(1);
       };
@@ -2516,7 +2517,7 @@ angular.module('dj-form').filter('formFormat', function () {
       /** 功能按钮 */
       $scope.clickButton = function (btn) {
         var result = btn.fn && btn.fn($scope.active, $scope.imgs);
-        console.log("点击, result = ", result);
+        // console.log("点击, result = ", result);
         if (result) $q.when(result).then(function (r) {
           $scope.pageCount = $scope.imgs.length;
           if ($scope.pageCount < 1) {
@@ -2532,7 +2533,7 @@ angular.module('dj-form').filter('formFormat', function () {
 }(window, angular);
 !function (window, angular, undefined) {
 
-  angular.module('dj-ui').factory("IMG", ["$q", "$log", function ($q, $log) {
+  angular.module('dj-ui').factory("IMG", ["$q", function ($q) {
 
     var maxsize = 2e5; // 200K以下文件，直接上传
 
@@ -2559,6 +2560,7 @@ angular.module('dj-form').filter('formFormat', function () {
         });
       }).catch(function (e) {
         console.log("getOrientation ERROR:", e);
+        return $q.reject(e);
       });
     }
     return {
@@ -2600,18 +2602,18 @@ angular.module('dj-form').filter('formFormat', function () {
      * @return 承诺，兑现内容为可上传的数据
      */
     function fileToBlob(file, orientation) {
-      if (!/\/(?:jpeg|png|gif)/i.test(file.type)) return $q.reject('不支持的图片格式');
+      if (!/\/(?:jpeg|png|gif|bmp)/i.test(file.type)) return $q.reject('不支持的图片格式');
 
       var deferred = $q.defer();
       var reader = new FileReader();
 
       reader.onload = function (event) {
         var result = this.result;
-        //$log.log('图片大小', result.length);
+        //console.log('图片大小', result.length);
 
         //如果图片大小小于200kb，则直接上传
         if (result.length <= maxsize) {
-          //$log.log('不压缩', result.length);
+          //console.log('不压缩', result.length);
           deferred.resolve(file);
           return;
         }
@@ -2629,7 +2631,7 @@ angular.module('dj-form').filter('formFormat', function () {
         function callback() {
           var data = compressImgToDataURL(img, orientation);
           var blob = dataURItoBlob(data);
-          //$log.log("压缩后：blob = ", blob);
+          //console.log("压缩后：blob = ", blob);
 
           img = null;
           deferred.resolve(blob);
@@ -2694,35 +2696,22 @@ angular.module('dj-form').filter('formFormat', function () {
         ctx.drawImage(img, 0, 0, width, height);
       }
 
-      function execOrientation(orientation, canvas3, ctx3, source, width, height) {
-        if (orientation < 1 || orientation > 8) return;
-        var x,
-            y,
-            n = orientation,
-            rotate = orientation > 4;
-        if (rotate) n = 9 - n;
-        n = n - 1;
-        var scalex = [1, -1, -1, 1][n];
-        var scaley = [1, 1, -1, -1][n];
-        //console.log("变换", scalex, scaley);
-        x = -width / 2;
-        y = -height / 2;
+      //旋转 镜像
+      var ndata = getGoodOrientationDataURL(orientation, canvas, width, height);
+      canvas.width = canvas.height = 0;
 
-        if (rotate) {
-          console.log("要旋转");
-          canvas3.width = height;
-          canvas3.height = width;
-          ctx3.translate(-y, -x);
-          ctx3.rotate(Math.PI * 1.5);
-        } else {
-          canvas3.width = width;
-          canvas3.height = height;
-          ctx3.translate(-x, -y);
-        }
-        ctx3.scale(scalex, scaley);
-        ctx3.drawImage(source, 0, 0, width, height, x, y, width, height);
+      //console.log("压缩前：" + initSize);
+      //console.log("压缩后：", ndata.length, "尺寸：", width, height);
+      //console.log("压缩率：" + ~~(100 * (initSize - ndata.length) / initSize) + "%");
+
+      return ndata;
+    }
+
+    /** 获取图像正确旋转图像后的数据 */
+    function getGoodOrientationDataURL(orientation, canvas, width, height) {
+      if (orientation < 1 || orientation > 8) {
+        return canvas.toDataURL("image/jpeg", 0.2);
       }
-
       //旋转 镜像
       var canvas3 = document.createElement("canvas");
       var ctx3 = canvas3.getContext("2d");
@@ -2730,15 +2719,37 @@ angular.module('dj-form').filter('formFormat', function () {
 
       //进行压缩
       var ndata = canvas3.toDataURL("image/jpeg", 0.2);
-
-      //$log.log("压缩前：" + initSize);
-      //$log.log("压缩后：", ndata.length, "尺寸：", width, height);
-      //$log.log("压缩率：" + ~~(100 * (initSize - ndata.length) / initSize) + "%");
-
-      canvas.width = canvas.height = 0;
       canvas3.width = canvas3.height = 0;
 
       return ndata;
+    }
+    function execOrientation(orientation, canvas3, ctx3, source, width, height) {
+      if (orientation < 1 || orientation > 8) return;
+      var x,
+          y,
+          n = orientation,
+          rotate = orientation > 4;
+      if (rotate) n = 9 - n;
+      n = n - 1;
+      var scalex = [1, -1, -1, 1][n];
+      var scaley = [1, 1, -1, -1][n];
+      //console.log("变换", scalex, scaley);
+      x = -width / 2;
+      y = -height / 2;
+
+      if (rotate) {
+        //console.log("要旋转");
+        canvas3.width = height;
+        canvas3.height = width;
+        ctx3.translate(-y, -x);
+        ctx3.rotate(Math.PI * 1.5);
+      } else {
+        canvas3.width = width;
+        canvas3.height = height;
+        ctx3.translate(-x, -y);
+      }
+      ctx3.scale(scalex, scaley);
+      ctx3.drawImage(source, 0, 0, width, height, x, y, width, height);
     }
 
     /**
@@ -2854,7 +2865,7 @@ angular.module('dj-form').filter('formFormat', function () {
       }
     };
   }).component('imgsUploader', {
-    template: '\n        <div class="box flex flex-left flex-wrap">\n          <div class="img preview" ng-click="clickImg($index)" ng-repeat=\'img in imgList track by $index\'>\n            <img ng-src="{{img|preview}}" />\n          </div>\n          <div class="img uploading" ng-repeat=\'file in File.uploadingFiles track by $index\'>\n            <div class="per">{{file.per}}%</div>\n          </div>\n          <div class="img add" ng-if="mode!=\'show\' && imgList.length < (maxCount||9)">\n            <input type="file" multiple accept="image/*,video/mp4" multi-file-upload change="File.onFile($files)">\n          </div>\n        </div>\n      ',
+    template: '\n        <div class="box flex flex-left flex-wrap">\n          <div class="img preview" ng-click="clickImg($index)" ng-repeat=\'img in imgList track by $index\'>\n            <img ng-src="{{img|preview}}" />\n          </div>\n          <div class="img uploading" ng-repeat=\'file in File.uploadingFiles track by $index\'>\n            <div class="per">{{file.error||(file.per+\'%\')}}</div>\n          </div>\n          <div class="img add" ng-if="mode!=\'show\' && imgList.length < (maxCount||9)">\n            <input type="file" multiple accept="image/*,video/mp4" multi-file-upload change="File.onFile($files)">\n          </div>\n        </div>\n      ',
     bindings: {
       appData: "<",
       maxCount: "<",
@@ -2931,7 +2942,7 @@ angular.module('dj-form').filter('formFormat', function () {
         //console.log(files);
         if (!files) return;
         //console.info('添加文件', files);
-        File.uploadingFiles = [];
+        File.uploadingFiles = File.uploadingFiles || [];
         for (var i = 0; i < files.length; i++) {
           File.uploadingFiles.push(files[i]);
         }
@@ -2953,6 +2964,12 @@ angular.module('dj-form').filter('formFormat', function () {
           File.uploadingFiles.splice(n, 1);
         }, function (e) {
           //console.info('上传失败, ', file, e);
+          file.error = e;
+          setTimeout(function () {
+            var n = File.uploadingFiles.indexOf(file);
+            File.uploadingFiles.splice(n, 1);
+            $scope.$apply();
+          }, 5000);
         }, function (process) {
           //console.info('上传进度, ', file, process);
           file.per = (process.loaded / file.size * 80).toFixed(2);
@@ -2964,8 +2981,7 @@ angular.module('dj-form').filter('formFormat', function () {
        * 上传
        **/
       upload: function upload() {
-        var prePost;
-        $http.post("签名", "upload/img").then(function (json) {
+        return $http.post("签名", "upload/img").then(function (json) {
           return json.datas;
         }).catch(function (e) {
           //console.log("准备上传图片，无签名！")

@@ -215,7 +215,7 @@
       /** 功能按钮 */
       $scope.clickButton = function (btn) {
         var result = btn.fn && btn.fn($scope.active, $scope.imgs);
-        console.log("点击, result = ", result);
+        // console.log("点击, result = ", result);
         if (result) $q.when(result).then(r => {
           $scope.pageCount = $scope.imgs.length;
           if ($scope.pageCount < 1) {

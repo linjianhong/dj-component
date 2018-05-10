@@ -52,7 +52,7 @@
       this.$onChanges = (changes) => {
         if (changes.param) {
           $scope.param = changes.param.currentValue;
-          console.log("对话框, param = ", changes.param.currentValue);
+          // console.log("对话框, param = ", changes.param.currentValue);
         }
         animate(1);
       }

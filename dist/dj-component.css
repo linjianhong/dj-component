@@ -44,10 +44,34 @@ dj-component-host .dj-pop-box{
   height: 5em;
   margin: .8em;
 }
+body { padding: 0; margin: 0; font-size: 12px; }
+* { box-sizing: border-box; }
+
+input, select {
+  -webkit-appearance: none;
+  outline: 0;
+}
+
+
+.djui-ul {
+  padding: 0.8em;
+}
+.djui-ul >* {
+  margin: 0.8em;
+}
+
+
+
 .djui-btn {
-  padding: .5em 1em;
+  display: inline-block;
+  padding: .8em 1em;
   border: solid 0;
   border-radius: .3em;
+  text-align: center;
+}
+.djui-btn.block {
+  width: 100%;
+  margin: 0;
 }
 .djui-btn.default {
   background: #eeeeee;
@@ -177,13 +201,6 @@ djui-tags-show > * > .tag {
 }
 
 
-body { padding: 0; margin: 0; }
-* { box-sizing: border-box; }
-
-input, select {
-  -webkit-appearance: none;
-  outline: 0;
-}
 
 
 /* 弹性布局样式 */
@@ -470,7 +487,8 @@ input, button {
   padding: 0 .8em 0 .3em;
 }
 .dj-comment-box > .list > .item > .left > img {
-  width: 100%;
+  width: 3.6em;
+  height: 3.6em;
 }
 
 .dj-comment-box > .list > .item > .right {
@@ -527,7 +545,7 @@ input, button {
   word-break: break-all;
   background: #eeeeee;
   border-bottom: solid 1px #dddddd;
-  padding: .2em 0 0 .6em;
+  padding: .2em;
   color: #669;
 }
 .dj-comment-box .praise-list > span{
@@ -536,10 +554,10 @@ input, button {
 .dj-comment-box .feedback-list{
   background: #eeeeee;
   border-bottom: solid 1px #dddddd;
-  padding: .2em 0 0 .6em;
+  padding: .2em;
 }
 .dj-comment-box .username{
-  padding: 0 .6em 0 0;
+  /* padding: 0 .6em 0 0; */
   color: #669;
 }
 
@@ -625,12 +643,19 @@ input, button {
 }
 
 
+.dj-comment-box .feedback-item {
+  padding: .3em 0;
+}
+
+
+
+
 /* 表单 */
 dj-form-item-host.publish {
   border-bottom: solid 1px #eeeeee;
   margin-bottom: 0;
   font-size: 1em;
-  padding: 0 1em;
+  padding: .2em 0;
 }
 dj-form-item-host.publish.mode-show {
   border-bottom: solid 0;
@@ -717,6 +742,12 @@ dj-toast {
   transition-property: height, visibility;
 }
 
+djui-dialog {
+  font-size: 1.2em;
+}
+djui-dialog * {
+  font-size: inherit;
+}
 djui-dialog > .djui-dialog {
   display: inline-block;
 }
@@ -861,6 +892,7 @@ imgs-uploader > .box > .img{
   width: 5em;
   height: 5em;
   margin: 0 .5em .5em 0;
+  /* width: calc(33% - .5em); */
 }
 imgs-uploader > .box > .img.uploading,
 imgs-uploader > .box > .img.add{
