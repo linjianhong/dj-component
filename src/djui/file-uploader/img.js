@@ -1,6 +1,6 @@
 !(function (window, angular, undefined) {
 
-  angular.module('dj-ui').factory("IMG", ["$q", "$log", function ($q, $log) {
+  angular.module('dj-ui').factory("IMG", ["$q", function ($q) {
 
     var maxsize = 2e5; // 200K以下文件，直接上传
 
@@ -27,6 +27,7 @@
         })
       }).catch(e=>{
         console.log("getOrientation ERROR:", e)
+        return $q.reject(e);
       });
     }
     return {
@@ -69,18 +70,18 @@
      * @return 承诺，兑现内容为可上传的数据
      */
     function fileToBlob(file, orientation) {
-      if (!/\/(?:jpeg|png|gif)/i.test(file.type)) return $q.reject('不支持的图片格式');
+      if (!/\/(?:jpeg|png|gif|bmp)/i.test(file.type)) return $q.reject('不支持的图片格式');
 
       var deferred = $q.defer();
       var reader = new FileReader();
 
       reader.onload = function (event) {
         var result = this.result;
-        //$log.log('图片大小', result.length);
+        //console.log('图片大小', result.length);
 
         //如果图片大小小于200kb，则直接上传
         if (result.length <= maxsize) {
-          //$log.log('不压缩', result.length);
+          //console.log('不压缩', result.length);
           deferred.resolve(file);
           return;
         }
@@ -98,7 +99,7 @@
         function callback() {
           var data = compressImgToDataURL(img, orientation);
           var blob = dataURItoBlob(data);
-          //$log.log("压缩后：blob = ", blob);
+          //console.log("压缩后：blob = ", blob);
 
           img = null;
           deferred.resolve(blob);
@@ -163,32 +164,23 @@
         ctx.drawImage(img, 0, 0, width, height);
       }
 
-      function execOrientation(orientation, canvas3, ctx3, source, width, height) {
-        if (orientation < 1 || orientation > 8) return;
-        var x, y, n = orientation, rotate = orientation > 4;
-        if (rotate) n = 9 - n;
-        n = n - 1;
-        var scalex = [1, -1, -1, 1][n];
-        var scaley = [1, 1, -1, -1][n];
-        //console.log("变换", scalex, scaley);
-        x = -width / 2;
-        y = -height / 2;
 
-        if (rotate) {
-          console.log("要旋转");
-          canvas3.width = height;
-          canvas3.height = width;
-          ctx3.translate(-y, -x);
-          ctx3.rotate(Math.PI * 1.5);
-        } else {
-          canvas3.width = width;
-          canvas3.height = height;
-          ctx3.translate(-x, -y);
-        }
-        ctx3.scale(scalex, scaley);
-        ctx3.drawImage(source, 0, 0, width, height, x, y, width, height);
+      //旋转 镜像
+      var ndata = getGoodOrientationDataURL(orientation, canvas, width, height);
+      canvas.width = canvas.height = 0;
+
+      //console.log("压缩前：" + initSize);
+      //console.log("压缩后：", ndata.length, "尺寸：", width, height);
+      //console.log("压缩率：" + ~~(100 * (initSize - ndata.length) / initSize) + "%");
+
+      return ndata;
+    }
+
+    /** 获取图像正确旋转图像后的数据 */
+    function getGoodOrientationDataURL(orientation, canvas, width, height){
+      if (orientation < 1 || orientation > 8){
+        return canvas.toDataURL("image/jpeg", 0.2);
       }
-
       //旋转 镜像
       var canvas3 = document.createElement("canvas");
       var ctx3 = canvas3.getContext("2d");
@@ -196,15 +188,34 @@
 
       //进行压缩
       var ndata = canvas3.toDataURL("image/jpeg", 0.2);
-
-      //$log.log("压缩前：" + initSize);
-      //$log.log("压缩后：", ndata.length, "尺寸：", width, height);
-      //$log.log("压缩率：" + ~~(100 * (initSize - ndata.length) / initSize) + "%");
-
-      canvas.width = canvas.height = 0;
       canvas3.width = canvas3.height = 0;
 
       return ndata;
+    }
+    function execOrientation(orientation, canvas3, ctx3, source, width, height) {
+      if (orientation < 1 || orientation > 8) return;
+      var x, y, n = orientation, rotate = orientation > 4;
+      if (rotate) n = 9 - n;
+      n = n - 1;
+      var scalex = [1, -1, -1, 1][n];
+      var scaley = [1, 1, -1, -1][n];
+      //console.log("变换", scalex, scaley);
+      x = -width / 2;
+      y = -height / 2;
+
+      if (rotate) {
+        //console.log("要旋转");
+        canvas3.width = height;
+        canvas3.height = width;
+        ctx3.translate(-y, -x);
+        ctx3.rotate(Math.PI * 1.5);
+      } else {
+        canvas3.width = width;
+        canvas3.height = height;
+        ctx3.translate(-x, -y);
+      }
+      ctx3.scale(scalex, scaley);
+      ctx3.drawImage(source, 0, 0, width, height, x, y, width, height);
     }
 
     /**

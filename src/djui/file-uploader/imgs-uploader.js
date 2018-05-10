@@ -26,7 +26,7 @@
             <img ng-src="{{img|preview}}" />
           </div>
           <div class="img uploading" ng-repeat='file in File.uploadingFiles track by $index'>
-            <div class="per">{{file.per}}%</div>
+            <div class="per">{{file.error||(file.per+'%')}}</div>
           </div>
           <div class="img add" ng-if="mode!='show' && imgList.length < (maxCount||9)">
             <input type="file" multiple accept="image/*,video/mp4" multi-file-upload change="File.onFile($files)">
@@ -108,7 +108,7 @@
         //console.log(files);
         if (!files) return;
         //console.info('添加文件', files);
-        File.uploadingFiles = [];
+        File.uploadingFiles = File.uploadingFiles || [];
         for (var i = 0; i < files.length; i++) {
           File.uploadingFiles.push(files[i]);
         }
@@ -132,6 +132,12 @@
           },
           e => {
             //console.info('上传失败, ', file, e);
+            file.error = e;
+            setTimeout(()=>{
+              var n = File.uploadingFiles.indexOf(file);
+              File.uploadingFiles.splice(n, 1);
+              $scope.$apply();
+            }, 5000)
           },
           process => {
             //console.info('上传进度, ', file, process);
@@ -145,8 +151,7 @@
        * 上传
        **/
       upload: function () {
-        var prePost
-        $http.post("签名", "upload/img")
+        return $http.post("签名", "upload/img")
           .then(json => json.datas)
           .catch(e => {
             //console.log("准备上传图片，无签名！")
