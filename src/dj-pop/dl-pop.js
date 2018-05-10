@@ -209,11 +209,11 @@
         if (!options.param) options = { param: options };
       }
       options.template = `<djui-dialog param="param"></djui-dialog>`;
-      return showComponent(options).then(btnName => {
-        if (btnName != "OK") {
-          return $q.reject(btnName)
+      return showComponent(options).then(result => {
+        if (!result || result.btnName != "OK") {
+          return $q.reject(result)
         }
-        return btnName;
+        return result;
       });
     }
 
@@ -224,11 +224,11 @@
         if (!options.param) options = { param: options };
       }
       options.template = `<djui-dialog param="param"></djui-dialog>`;
-      return showComponent(options).then(btnName => {
-        if (btnName != "OK") {
-          return $q.reject(btnName)
+      return showComponent(options).then(result => {
+        if (!result || result.btnName != "OK") {
+          return $q.reject(result)
         }
-        return btnName;
+        return result;
       });
     }
 
