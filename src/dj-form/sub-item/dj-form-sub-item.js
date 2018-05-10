@@ -380,7 +380,7 @@
       ></imgs-uploader>`,
     "imgs-uploader-show": `
       <div class="flex">
-        <imgs-uploader class="b padding-v-1 {{$ctrl.configs.css.hostBodyShow}}"
+        <imgs-uploader class="ab padding-v-1 {{$ctrl.configs.css.hostBodyShow}}"
           imgs="$ctrl.initValue"
           mode="show"
         ></imgs-uploader>
@@ -450,7 +450,7 @@
     if (theControlers[type]) {
       return theControlers[type];
     }
-    return theControlers.empty;
+    return theControlers.input;
   }
   function getControllerShow(type) {
     var def = getSafeDefine(type);
