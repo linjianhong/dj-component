@@ -15,7 +15,7 @@
     replace: true,
     template: `
       <div class="djui-gallery-box">
-        <div class="djui-gallery-list flex" ng-transclude>
+        <div class="djui-gallery-list" ng-transclude>
           <div class="djui-gallery-item item-{{$index+1-active}}" ng-repeat="img in imgs track by $index" >
             <img class="" ng-src="{{img}}"/>
           </div>
@@ -81,7 +81,7 @@
         init: function () {
           Move.box = $element[0].querySelector(".djui-gallery-box");
           angular.element(Move.box)
-            .css("height", $element[0].clientHeight)
+            //.css("height", $element[0].clientHeight)
             .css("width", $element[0].clientWidth);
           var w = Move.box.clientWidth;
           //console.log("初始化, w=", w);
