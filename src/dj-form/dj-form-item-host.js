@@ -269,21 +269,26 @@
       compileConfigs($scope.configs, $scope.value);
     }
 
+    function hideHost(){
+      $element.html("");
+      $element.addClass("empty");
+    }
+
     /** 编译生成动态子表单项 */
     function compileConfigs(configs, value) {
       //console.log("HOST 编译 ", configs, value);
       if (!configs) {
-        $element.html("");
+        $timeout(hideHost);
         return;
       }
       /** 一些自动隐藏 */
       if (configs.show) {
         if (configs.show.autohide == 'empty' && value !== 0 && !value) {
-          $element.html("");
+          $timeout(hideHost);
           return;
         }
         if (configs.show.autohide == 'zero length' && !(value && value.length)) {
-          $element.html("");
+          $timeout(hideHost);
           return;
         }
       }

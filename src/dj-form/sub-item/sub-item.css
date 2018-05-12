@@ -2,6 +2,9 @@
 dj-form-item-host * {
   font-size: inherit;
 }
+dj-form-item-host.empty {
+  display: none;
+}
 dj-form-item-host.mode-edit > * > .b {
   line-height: 2.2em;
   width: 100%;
