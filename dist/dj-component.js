@@ -264,21 +264,26 @@ angular.module('dj-ui', ['ngAnimate']);
       compileConfigs($scope.configs, $scope.value);
     };
 
+    function hideHost() {
+      $element.html("");
+      $element.addClass("empty");
+    }
+
     /** 编译生成动态子表单项 */
     function compileConfigs(configs, value) {
       //console.log("HOST 编译 ", configs, value);
       if (!configs) {
-        $element.html("");
+        $timeout(hideHost);
         return;
       }
       /** 一些自动隐藏 */
       if (configs.show) {
         if (configs.show.autohide == 'empty' && value !== 0 && !value) {
-          $element.html("");
+          $timeout(hideHost);
           return;
         }
         if (configs.show.autohide == 'zero length' && !(value && value.length)) {
-          $element.html("");
+          $timeout(hideHost);
           return;
         }
       }
@@ -2343,7 +2348,7 @@ angular.module('dj-form').filter('formFormat', function () {
     },
     transclude: true,
     replace: true,
-    template: '\n      <div class="djui-gallery-box">\n        <div class="djui-gallery-list flex" ng-transclude>\n          <div class="djui-gallery-item item-{{$index+1-active}}" ng-repeat="img in imgs track by $index" >\n            <img class="" ng-src="{{img}}"/>\n          </div>\n        </div>\n        <div class="djui-gallery-debug" ng-if="debug">\n          {{debug}}\n        </div>\n        <div class="djui-gallery-top" ng-if="isMoving">\n        </div>\n      </div>\n      <div class="djui-gallery-nav flex flex-between">\n        <div class="dots flex flex-1 flex-center" ng-if="1">\n          <div ng-click="scrollTo($index)" ng-repeat="img in imgs track by $index">{{$index==active&&\'\u25CF\'||\'\u25CB\'}}</div>\n        </div>\n        <div class="btns flex flex-center" ng-if="$ctrl.btns.length">\n          <div ng-click="clickButton(btn)" ng-repeat="btn in $ctrl.btns track by $index">\n            <div class="{{btn.css}}">{{btn.text||\'\'}}</div>\n          </div>\n        </div>\n      </div>\n    ',
+    template: '\n      <div class="djui-gallery-box">\n        <div class="djui-gallery-list" ng-transclude>\n          <div class="djui-gallery-item item-{{$index+1-active}}" ng-repeat="img in imgs track by $index" >\n            <img class="" ng-src="{{img}}"/>\n          </div>\n        </div>\n        <div class="djui-gallery-debug" ng-if="debug">\n          {{debug}}\n        </div>\n        <div class="djui-gallery-top" ng-if="isMoving">\n        </div>\n      </div>\n      <div class="djui-gallery-nav flex flex-between">\n        <div class="dots flex flex-1 flex-center" ng-if="1">\n          <div ng-click="scrollTo($index)" ng-repeat="img in imgs track by $index">{{$index==active&&\'\u25CF\'||\'\u25CB\'}}</div>\n        </div>\n        <div class="btns flex flex-center" ng-if="$ctrl.btns.length">\n          <div ng-click="clickButton(btn)" ng-repeat="btn in $ctrl.btns track by $index">\n            <div class="{{btn.css}}">{{btn.text||\'\'}}</div>\n          </div>\n        </div>\n      </div>\n    ',
     controller: ["$scope", "$window", "$element", "$q", "$animateCss", function ($scope, $window, $element, $q, $animateCss) {
       var _this14 = this;
 
@@ -2388,7 +2393,9 @@ angular.module('dj-form').filter('formFormat', function () {
         slowTurn: 0.3, // 慢速移动可翻页的比例
         init: function init() {
           Move.box = $element[0].querySelector(".djui-gallery-box");
-          angular.element(Move.box).css("height", $element[0].clientHeight).css("width", $element[0].clientWidth);
+          angular.element(Move.box)
+          //.css("height", $element[0].clientHeight)
+          .css("width", $element[0].clientWidth);
           var w = Move.box.clientWidth;
           //console.log("初始化, w=", w);
           Move.list = $element[0].querySelector(".djui-gallery-list");

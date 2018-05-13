@@ -294,6 +294,9 @@ djui-tags-show > * > .tag {
 dj-form-item-host * {
   font-size: inherit;
 }
+dj-form-item-host.empty {
+  display: none;
+}
 dj-form-item-host.mode-edit > * > .b {
   line-height: 2.2em;
   width: 100%;
@@ -800,7 +803,6 @@ djui-dialog > .djui-dialog > .box > .footer .thin-btns > * {
 
 
 djui-gallery{
-  position: relative;
   display: block;
   width: 100%;
   height:100%;
@@ -824,15 +826,27 @@ djui-gallery{
 
 
 .djui-gallery-box > .djui-gallery-list {
-  position: absolute;
-  z-index: 1;
-  top: 0;
-  left: 0;
+  position: relative;
+  width: 100%;
   height: 100%;
-  width: auto;
-  word-break: keep-all;
-  white-space: nowrap;
-  overflow: hidden;
+  z-index: 1;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-transform-style:preserve-3d;
+  -moz-transform-style: preserve-3d;
+  -ms-transform-style: preserve-3d;
+  transform-style:preserve-3d;
+  -webkit-transition-property:-webkit-transform;
+  -moz-transition-property: -moz-transform;
+  -o-transition-property: -o-transform;
+  -ms-transition-property: -ms-transform;
+  transition-property:transform;
+  -webkit-box-sizing: content-box;
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
 }
 
 .djui-gallery-box > .djui-gallery-list  > * {
