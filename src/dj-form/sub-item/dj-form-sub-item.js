@@ -13,27 +13,24 @@
 
   /**
    * 初始化下拉列表
-   * @param {*} param 要初始化列表的参数，false 表示用已有的数据(自己都忘了什么时候用false!，看看使用者吧)
+   * @param {*} param 要初始化列表的参数
    */
   function initDropdownList(param, $http, $q) {
     //console.log('获取下拉列表, param =', param);
-    if (param === false && initDropdownList.result) {
-      return $q.when(initDropdownList.result);
-    }
-    if (!param.list) return $q.when(initDropdownList.result = []);
+    if (!param || !param.list) return $q.when([]);
     if (angular.isString(param.list)) {
-      return $http.post('获取下拉列表/' + param.list, {}).then(json => {
+      return $http.post('获取下拉列表', param.list).then(json => {
         //console.log('获取下拉列表, json =', json);
-        return $q.when(initDropdownList.result = json.list);
+        return $q.when(json.list);
       }).catch(e => {
         //console.log('获取下拉列表, 失败: ', e);
-        return initDropdownList.result = $q.reject([]);
+        return $q.reject([]);
       })
     }
     if (angular.isFunction(param.list)) {
-      return $q.when(initDropdownList.result = param.list());
+      return $q.when(param.list());
     }
-    return $q.when(initDropdownList.result = param.list);
+    return $q.when(param.list);
   }
 
 
@@ -114,7 +111,7 @@
           $scope.value = changes.initValue.currentValue;
           configReady.ready(configs => {
             // 不重新获取（当值初始化，或被上级再改变时）
-            initDropdownList(false, $http, $q).then(list => {
+            initDropdownList(configs.param, $http, $q).then(list => {
               $scope.list = $scope.list_full = list;
               calcSelected();
             });
