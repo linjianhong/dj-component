@@ -43,27 +43,27 @@
           }
         });
 
-        /** 如果有 mode 改变，就初始化或重新初始化插座 */
+        /** mode 是否改变 ? */
         if (changes.mode) {
           var mode = changes.mode.currentValue;
           if (mode != 'show') mode = 'edit';
           if (mode != theMode) {
             theMode = $scope.mode = mode;
-            $scope.stop = true;
-            var theValue = $scope.memValue || {};
-            //console.log("有 mode 改变: ", theMode, " => ", mode, ", memValue=", theValue);
-            if (!theChanges.configs) theChanges.configs = {};
-            if (!theChanges.configs.currentValue) theChanges.configs.currentValue = $scope.configs;
-            if (!theChanges.initValues) theChanges.initValues = {};
-            if (!theChanges.initValues.currentValue) theChanges.initValues.currentValue = theValue;
-            $timeout(() => {
-              $scope.stop = false;
-              var fn = mode == "show" && ctrlHostShow || ctrlHostEdit;
-              fn.call(this, $scope, $element, $timeout, $q, DjWaiteReady);
-              this.onChangesCtrl(theChanges);
+            /** mode 改变，初始化或重新初始化插座 */
+            reInit(theMode, theChanges).then(() => {
               theChanges = {};
-            });
+            })
+            return;
           }
+        }
+
+
+        /** 如果已有 mode，且 配置改变，则重新初始化。保留原数据 */
+        if (theMode && changes.configs) {
+          reInit(theMode, theChanges).then(() => {
+            theChanges = {};
+          });
+          return;
         }
 
         /** 如果有 mode 数据，就响应参数传递 */
@@ -73,6 +73,22 @@
             theChanges = {};
           });
         }
+      }
+
+      var reInit = (mode, changes) => {
+        $scope.stop = true;
+        var theValue = $scope.memValue || {};
+        //console.log("有 mode 改变: ", theMode, " => ", mode, ", memValue=", theValue);
+        if (!changes.configs) changes.configs = {};
+        if (!changes.configs.currentValue) changes.configs.currentValue = $scope.configs;
+        if (!changes.initValues) changes.initValues = {};
+        if (!changes.initValues.currentValue) changes.initValues.currentValue = theValue;
+        return $timeout(() => {
+          $scope.stop = false;
+          var fn = mode == "show" && ctrlHostShow || ctrlHostEdit;
+          fn.call(this, $scope, $element, $timeout, $q, DjWaiteReady);
+          this.onChangesCtrl(changes);
+        });
       }
     }]
   });
@@ -185,7 +201,7 @@
     this.onChangesCtrl = (changes) => {
       if (changes.configs) $scope.configs = changes.configs.currentValue;
       if (changes.initValues) $scope.memValue = changes.initValues.currentValue;
-      if(changes.configs || changes.initValues){
+      if (changes.configs || changes.initValues) {
         initConfigs($scope.configs, $scope.memValue);
       }
     }
