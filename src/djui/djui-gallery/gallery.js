@@ -40,6 +40,7 @@
     controller: ["$scope", "$window", "$element", "$q", "$animateCss", function ($scope, $window, $element, $q, $animateCss) {
       $scope.active = 0;
       $scope.pageCount = 1;
+      $scope.imgs = [];
       this.$onChanges = (changes) => {
         if (changes.imgs) {
           $scope.imgs = changes.imgs.currentValue || [];
@@ -172,6 +173,12 @@
           if (!Move.moved) {
             //console.log("点击");
             $scope.$emit("dj-pop-box-close", { active: $scope.active });
+            if ($scope.imgs.length) {
+              event.preventDefault();
+              event.stopPropagation();
+              Move.setMoving(false);
+            }
+            return;
           }
           else if (dMove > minMove) {
             scrollTo($scope.active + 1);
