@@ -49,9 +49,10 @@
       </div>
     `,
     controller: ["$scope", "$element", "$q", "$animateCss", function ($scope, $element, $q, $animateCss) {
+      $scope.param = {};
       this.$onChanges = (changes) => {
         if (changes.param) {
-          $scope.param = changes.param.currentValue;
+          $scope.param = changes.param.currentValue || {};
           // console.log("对话框, param = ", changes.param.currentValue);
         }
         animate(1);
@@ -64,7 +65,7 @@
           $q.when(result).then(r => {
             animate(0);
             $scope.$emit("dj-pop-box-close", name);
-          }).catch(function(e){
+          }).catch(function (e) {
           });
         }
         else {
@@ -93,7 +94,7 @@
         if (animate.running) return $q.when(animate.running);
         //$element.css("opacity", 0)
         var animator = $animateCss($element, {
-          from: { opacity: b-1 },
+          from: { opacity: b - 1 },
           to: { opacity: b },
           easing: 'ease',
           duration: 0.5 // 秒
