@@ -348,27 +348,26 @@ angular.module('dj-form').filter('formFormat', function () {
           }
         });
 
-        /** 如果有 mode 改变，就初始化或重新初始化插座 */
+        /** mode 是否改变 ? */
         if (changes.mode) {
           var mode = changes.mode.currentValue;
           if (mode != 'show') mode = 'edit';
           if (mode != theMode) {
             theMode = $scope.mode = mode;
-            $scope.stop = true;
-            var theValue = $scope.memValue || {};
-            //console.log("有 mode 改变: ", theMode, " => ", mode, ", memValue=", theValue);
-            if (!theChanges.configs) theChanges.configs = {};
-            if (!theChanges.configs.currentValue) theChanges.configs.currentValue = $scope.configs;
-            if (!theChanges.initValues) theChanges.initValues = {};
-            if (!theChanges.initValues.currentValue) theChanges.initValues.currentValue = theValue;
-            $timeout(function () {
-              $scope.stop = false;
-              var fn = mode == "show" && ctrlHostShow || ctrlHostEdit;
-              fn.call(_this3, $scope, $element, $timeout, $q, DjWaiteReady);
-              _this3.onChangesCtrl(theChanges);
+            /** mode 改变，初始化或重新初始化插座 */
+            reInit(theMode, theChanges).then(function () {
               theChanges = {};
             });
+            return;
           }
+        }
+
+        /** 如果已有 mode，且 配置改变，则重新初始化。保留原数据 */
+        if (theMode && changes.configs) {
+          reInit(theMode, theChanges).then(function () {
+            theChanges = {};
+          });
+          return;
         }
 
         /** 如果有 mode 数据，就响应参数传递 */
@@ -378,6 +377,22 @@ angular.module('dj-form').filter('formFormat', function () {
             theChanges = {};
           });
         }
+      };
+
+      var reInit = function reInit(mode, changes) {
+        $scope.stop = true;
+        var theValue = $scope.memValue || {};
+        //console.log("有 mode 改变: ", theMode, " => ", mode, ", memValue=", theValue);
+        if (!changes.configs) changes.configs = {};
+        if (!changes.configs.currentValue) changes.configs.currentValue = $scope.configs;
+        if (!changes.initValues) changes.initValues = {};
+        if (!changes.initValues.currentValue) changes.initValues.currentValue = theValue;
+        return $timeout(function () {
+          $scope.stop = false;
+          var fn = mode == "show" && ctrlHostShow || ctrlHostEdit;
+          fn.call(_this3, $scope, $element, $timeout, $q, DjWaiteReady);
+          _this3.onChangesCtrl(changes);
+        });
       };
     }]
   });
@@ -1104,27 +1119,24 @@ angular.module('dj-form').filter('formFormat', function () {
 
   /**
    * 初始化下拉列表
-   * @param {*} param 要初始化列表的参数，false 表示用已有的数据(自己都忘了什么时候用false!，看看使用者吧)
+   * @param {*} param 要初始化列表的参数
    */
   function initDropdownList(param, $http, $q) {
     //console.log('获取下拉列表, param =', param);
-    if (param === false && initDropdownList.result) {
-      return $q.when(initDropdownList.result);
-    }
-    if (!param.list) return $q.when(initDropdownList.result = []);
+    if (!param || !param.list) return $q.when([]);
     if (angular.isString(param.list)) {
-      return $http.post('获取下拉列表/' + param.list, {}).then(function (json) {
+      return $http.post('获取下拉列表', param.list).then(function (json) {
         //console.log('获取下拉列表, json =', json);
-        return $q.when(initDropdownList.result = json.list);
+        return $q.when(json.list);
       }).catch(function (e) {
         //console.log('获取下拉列表, 失败: ', e);
-        return initDropdownList.result = $q.reject([]);
+        return $q.reject([]);
       });
     }
     if (angular.isFunction(param.list)) {
-      return $q.when(initDropdownList.result = param.list());
+      return $q.when(param.list());
     }
-    return $q.when(initDropdownList.result = param.list);
+    return $q.when(param.list);
   }
 
   var theControlers = {
@@ -1206,7 +1218,7 @@ angular.module('dj-form').filter('formFormat', function () {
           $scope.value = changes.initValue.currentValue;
           configReady.ready(function (configs) {
             // 不重新获取（当值初始化，或被上级再改变时）
-            initDropdownList(false, $http, $q).then(function (list) {
+            initDropdownList(configs.param, $http, $q).then(function (list) {
               $scope.list = $scope.list_full = list;
               calcSelected();
             });
@@ -2354,6 +2366,7 @@ angular.module('dj-form').filter('formFormat', function () {
 
       $scope.active = 0;
       $scope.pageCount = 1;
+      $scope.imgs = [];
       this.$onChanges = function (changes) {
         if (changes.imgs) {
           $scope.imgs = changes.imgs.currentValue || [];
@@ -2484,6 +2497,12 @@ angular.module('dj-form').filter('formFormat', function () {
           if (!Move.moved) {
             //console.log("点击");
             $scope.$emit("dj-pop-box-close", { active: $scope.active });
+            if ($scope.imgs.length) {
+              event.preventDefault();
+              event.stopPropagation();
+              Move.setMoving(false);
+            }
+            return;
           } else if (dMove > minMove) {
             scrollTo($scope.active + 1);
           } else if (dMove < -minMove) {
