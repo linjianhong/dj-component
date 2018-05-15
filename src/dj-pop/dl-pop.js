@@ -186,9 +186,23 @@
     }
 
 
+    function component(componentName, params, options) {
+      return showComponentAutoParams(componentName, params, options);
+    }
+
+
+    function dialog(componentName, params, options) {
+      return showComponentAutoParams(componentName, params, options).then(btnName => {
+        if (btnName != "OK") {
+          return $q.reject(btnName)
+        }
+        return btnName;
+      });
+    }
+
+
     function gallery(params, options) {
       return showComponentAutoParams("djui-gallery", params, options);
-      return show("djui-gallery", options);
     }
 
     function toast(text, delay) {
@@ -254,6 +268,8 @@
       input,
       toast,
       gallery,
+      component,
+      dialog,
     }
   }])
 
