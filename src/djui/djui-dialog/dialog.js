@@ -41,8 +41,8 @@
           </div>
           <div class="footer" ng-transclude="footer">
             <div class="thin-btns flex flex-arround">
-              <div class="thin-btn default" ng-if="!param.cancel.hide" ng-click="cancel()">{{param.cancel.text||'取消'}}</div>
-              <div class="thin-btn primary" ng-if="!param.OK.hide" ng-click="OK()">{{param.OK.text||'确定'}}</div>
+              <div class="thin-btn {{param.cancel.css||'default'}}" ng-if="!param.cancel.hide" ng-click="cancel()">{{param.cancel.text||'取消'}}</div>
+              <div class="thin-btn {{param.OK.css||'primary'}}" ng-if="!param.OK.hide" ng-click="OK()">{{param.OK.text||'确定'}}</div>
             </div>
           </div>
         </div>
