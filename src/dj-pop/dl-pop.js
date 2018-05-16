@@ -54,6 +54,7 @@
   });
 
   theModule.factory("DjPop", ["$compile", "$rootScope", "DjWaiteReady", "$animateCss", "$q", function ($compile, $rootScope, DjWaiteReady, $animateCss, $q) {
+
     /**
      * 显示功能
      * @param {string} component
@@ -152,7 +153,7 @@
       var attr = [];
       for (var k in params) {
         if (params.hasOwnProperty(k)) {
-          attr.push(`${k}="${k}"`);
+          attr.push(`${k.replace(/([A-Z])/g, "-$1").toLowerCase()}="${k}"`);
           scopeDjPop[k] = params[k];
         }
       }
