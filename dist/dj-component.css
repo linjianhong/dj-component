@@ -290,157 +290,6 @@ djui-tags-show > * > .tag {
 
 
 
-/* 动态表单子组件 */
-dj-form-item-host * {
-  font-size: inherit;
-}
-dj-form-item-host.empty {
-  display: none;
-}
-dj-form-item-host.mode-edit > * > .b {
-  line-height: 2.2em;
-  width: 100%;
-  height: 2.2em;
-  border: 1px solid #e6e6e6;
-  border-radius: .3em;
-  padding-left: 1em;
-  -webkit-appearance: none;
-  outline: 0;
-}
-dj-form-default-item-textarea > textarea{
-  min-height: 5em;
-}
-
-dj-form-item-host > .ng-invalid > input ,
-dj-form-item-host > .ng-invalid > djui-input ,
-dj-form-item-host > .ng-invalid > uib-dropdown ,
-dj-form-item-host > .ng-invalid > select,
-dj-form-item-host > .ng-invalid > * > select {
-  border: 1px solid #ff000033;
-}
-
-dj-form-item-host .prompt-top {
-  font-size: inherit;
-  padding: 0.3em .06em;
-}
-dj-form-item-host .prompt-top > .title {
-  font-size: inherit;
-}
-dj-form-item-host .prompt-top > .title > .require{
-  font-size: inherit;
-  font-weight: 900;
-  color: #888888;
-  padding: 0 .3em 0 0;
-}
-dj-form-item-host > .ng-invalid .prompt-top > .title > .require{
-  color: #ff0000;
-}
-dj-form-item-host .prompt-top > .prompt {
-  font-size: 0.8em;
-  color: #888;
-}
-dj-form-item-host .prompt-top > .prompt {
-  font-size: 0.8em;
-  color: #f00;
-}
-
-/* 下拉框*/
-dj-form-default-item-dropdown  {
-  position: relative;
-  z-index: 1;
-}
-dj-form-default-item-dropdown:after {
-  content: " ";
-  display: inline-block;
-  height: 6px;
-  width: 6px;
-  border-width: 2px 2px 0 0;
-  border-color: #C8C8CD;
-  border-style: solid;
-  -webkit-transform: matrix(0.71, 0.71, -0.71, 0.71, 0, 0);
-  transform: matrix(0.71, 0.71, -0.71, 0.71, 0, 0);
-  position: relative;
-  position: absolute;
-  right: 15px;
-  margin-top: -4px;
-  bottom: 1.1em;
-}
-
-/* 下拉框 */
-dj-form-default-item-dropdown.normal:after {
-  bottom: 1em;
-}
-dj-form-default-item-dropdown > .inputs {
-  position: relative;
-}
-dj-form-default-item-dropdown > .inputs > .placeholder {
-  color: #888888;
-}
-dj-form-default-item-dropdown > .inputs > select {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  padding: 0 .8em;
-  border: solid 0;
-}
-dj-form-default-item-dropdown > .inputs > select.empty {
-  background: transparent;
-}
-
-
-/* 组合框 */
-dj-form-default-item-combobox > .inputs {
-  position: relative;
-}
-dj-form-default-item-combobox > .inputs > djui-input,
-dj-form-default-item-combobox > .inputs > select {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-}
-
-dj-form-default-item-combobox > .inputs > djui-input {
-  z-index: 12;
-  width: calc(100% - 2em);
-  padding: inherit;
-}
-
-dj-form-default-item-combobox > .inputs > .caret-down {
-  z-index: 10;
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 2em;
-  height: 100%;
-  padding: .5em;
-  background-color: rgba(0,0,0,0.1);
-}
-.caret-down > *{
-  border: solid .5em transparent;
-  border-top: solid .5em #888888;
-  border-bottom: solid 0;
-}
-
-dj-form-default-item-combobox > .inputs > select {
-  z-index: 11;
-  opacity: 0;
-}
-
-
-/* 显示通用 */
-dj-form-item-host.mode-show > * > * > .a {
-
-}
-dj-form-item-host.mode-show > * > * > .b {
-  padding-left: 0.8em;
-}
-
-
-
 
 input, button {
   outline: 0;
@@ -730,6 +579,157 @@ dj-toast {
   margin: auto;
   max-width: 40%;
 }
+/* 动态表单子组件 */
+dj-form-item-host * {
+  font-size: inherit;
+}
+dj-form-item-host.empty {
+  display: none;
+}
+dj-form-item-host.mode-edit > * > .b {
+  line-height: 2.2em;
+  width: 100%;
+  height: 2.2em;
+  border: 1px solid #e6e6e6;
+  border-radius: .3em;
+  padding-left: 1em;
+  -webkit-appearance: none;
+  outline: 0;
+}
+dj-form-default-item-textarea > textarea{
+  min-height: 5em;
+}
+
+dj-form-item-host > .ng-invalid > input ,
+dj-form-item-host > .ng-invalid > djui-input ,
+dj-form-item-host > .ng-invalid > uib-dropdown ,
+dj-form-item-host > .ng-invalid > select,
+dj-form-item-host > .ng-invalid > * > select {
+  border: 1px solid #ff000033;
+}
+
+dj-form-item-host .prompt-top {
+  font-size: inherit;
+  padding: 0.3em .06em;
+}
+dj-form-item-host .prompt-top > .title {
+  font-size: inherit;
+}
+dj-form-item-host .prompt-top > .title > .require{
+  font-size: inherit;
+  font-weight: 900;
+  color: #888888;
+  padding: 0 .3em 0 0;
+}
+dj-form-item-host > .ng-invalid .prompt-top > .title > .require{
+  color: #ff0000;
+}
+dj-form-item-host .prompt-top > .prompt {
+  font-size: 0.8em;
+  color: #888;
+}
+dj-form-item-host .prompt-top > .prompt {
+  font-size: 0.8em;
+  color: #f00;
+}
+
+/* 下拉框*/
+dj-form-default-item-dropdown  {
+  position: relative;
+  z-index: 1;
+}
+dj-form-default-item-dropdown:after {
+  content: " ";
+  display: inline-block;
+  height: 6px;
+  width: 6px;
+  border-width: 2px 2px 0 0;
+  border-color: #C8C8CD;
+  border-style: solid;
+  -webkit-transform: matrix(0.71, 0.71, -0.71, 0.71, 0, 0);
+  transform: matrix(0.71, 0.71, -0.71, 0.71, 0, 0);
+  position: relative;
+  position: absolute;
+  right: 15px;
+  margin-top: -4px;
+  bottom: 1.1em;
+}
+
+/* 下拉框 */
+dj-form-default-item-dropdown.normal:after {
+  bottom: 1em;
+}
+dj-form-default-item-dropdown > .inputs {
+  position: relative;
+}
+dj-form-default-item-dropdown > .inputs > .placeholder {
+  color: #888888;
+}
+dj-form-default-item-dropdown > .inputs > select {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0 .8em;
+  border: solid 0;
+}
+dj-form-default-item-dropdown > .inputs > select.empty {
+  background: transparent;
+}
+
+
+/* 组合框 */
+dj-form-default-item-combobox > .inputs {
+  position: relative;
+}
+dj-form-default-item-combobox > .inputs > djui-input,
+dj-form-default-item-combobox > .inputs > select {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+dj-form-default-item-combobox > .inputs > djui-input {
+  z-index: 12;
+  width: calc(100% - 2em);
+  padding: inherit;
+}
+
+dj-form-default-item-combobox > .inputs > .caret-down {
+  z-index: 10;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 2em;
+  height: 100%;
+  padding: .5em;
+  background-color: rgba(0,0,0,0.1);
+}
+.caret-down > *{
+  border: solid .5em transparent;
+  border-top: solid .5em #888888;
+  border-bottom: solid 0;
+}
+
+dj-form-default-item-combobox > .inputs > select {
+  z-index: 11;
+  opacity: 0;
+}
+
+
+/* 显示通用 */
+dj-form-item-host.mode-show > * > * > .a {
+
+}
+dj-form-item-host.mode-show > * > * > .b {
+  padding-left: 0.8em;
+}
+
+
+
 [dj-collapse] {
   position: relative;
   /* height: 0;
