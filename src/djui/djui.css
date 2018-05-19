@@ -114,6 +114,13 @@ djui-input > div > i.fa{
 }
 
 
+.djui-input-box {
+  width: 100%;
+}
+.djui-input-box input {
+  border-width: 0;
+}
+
 djui-star {
   display: inline-block;
 }

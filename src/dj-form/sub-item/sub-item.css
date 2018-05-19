@@ -21,6 +21,7 @@ dj-form-default-item-textarea > textarea{
 
 dj-form-item-host > .ng-invalid > input ,
 dj-form-item-host > .ng-invalid > djui-input ,
+dj-form-item-host > .ng-invalid > djui-date ,
 dj-form-item-host > .ng-invalid > uib-dropdown ,
 dj-form-item-host > .ng-invalid > select,
 dj-form-item-host > .ng-invalid > * > select {
@@ -103,6 +104,7 @@ dj-form-default-item-combobox > .inputs {
   position: relative;
 }
 dj-form-default-item-combobox > .inputs > djui-input,
+dj-form-default-item-combobox > .inputs > djui-date,
 dj-form-default-item-combobox > .inputs > select {
   position: absolute;
   left: 0;
