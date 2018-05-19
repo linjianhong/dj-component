@@ -283,6 +283,16 @@
         on-change="$ctrl.onChange({value: value})"
       ></djui-input>`,
 
+    /** 日期框 */
+    "date": `
+      <div class="a flex prompt-top" dj-form-default-tip></div>
+      <djui-date class="b flex"
+        param="$ctrl.configs.param"
+        placeholder="{{$ctrl.configs.param.placeholder}}"
+        init-value="$ctrl.initValue"
+        on-change="$ctrl.onChange({value: value})"
+      ></djui-date>`,
+
     /** 多行文本 */
     "textarea": `
       <div class="a flex prompt-top" dj-form-default-tip></div>
@@ -388,6 +398,7 @@
 
   var theComponentDefines = [
     { name: "input", showTemplate: "initValue-format-show" },
+    { name: "date", controller: "input" },
     { name: "textarea", showTemplate: "textarea-show", controller: "input" },
     { name: "dropdown", showTemplate: "text-format-show", showController: "dropdown-show" },
     { name: "combobox", showTemplate: "initValue-format-show", showController: "dropdown-show" },
