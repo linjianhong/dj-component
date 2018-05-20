@@ -21,7 +21,7 @@
     if (angular.isString(param.list)) {
       return $http.post('获取下拉列表', param.list).then(json => {
         //console.log('获取下拉列表, json =', json);
-        return $q.when(json.list);
+        return $q.when(json.list || json.datas.list);
       }).catch(e => {
         //console.log('获取下拉列表, 失败: ', e);
         return $q.reject([]);
