@@ -14,6 +14,7 @@ var theForm = {
         placeholder: "2 ~ 8 chars",
       }
     },
+    { name: 'date1', title: '日期', type: 'date' },
     { name: 's1', title: '下拉框1', type: 'dropdown', param: { valid: { require: true }, list: ['item1', 'item2', 'item3'], placeholder: "Please select" } },
     { name: 's1', title: '下拉框别名', type: 'select', param: { valid: { require: true }, list: ['item1', 'item2', 'item3'], placeholder: "Please choose" } },
     {

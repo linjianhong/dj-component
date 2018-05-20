@@ -1119,6 +1119,423 @@ angular.module('dj-form').filter('formFormat', function () {
     return DjWaiteReady;
   }]);
 }(window, angular);
+/**
+ * 动态表单-所有子组件
+ * ver: 0.1.0
+ * build: 2018-04-26
+ * power by LJH.
+ */
+!function (window, angular, undefined) {
+  var DJ_FORM_DEFAULT = {
+    pre: "dj-form-default-item-"
+  };
+
+  var theModule = angular.module('dj-form');
+
+  /**
+   * 初始化下拉列表
+   * @param {*} param 要初始化列表的参数
+   */
+  function initDropdownList(param, $http, $q) {
+    //console.log('获取下拉列表, param =', param);
+    if (!param || !param.list) return $q.when([]);
+    if (angular.isString(param.list)) {
+      return $http.post('获取下拉列表', param.list).then(function (json) {
+        //console.log('获取下拉列表, json =', json);
+        return $q.when(json.list || json.datas.list);
+      }).catch(function (e) {
+        //console.log('获取下拉列表, 失败: ', e);
+        return $q.reject([]);
+      });
+    }
+    if (angular.isFunction(param.list)) {
+      return $q.when(param.list());
+    }
+    return $q.when(param.list);
+  }
+
+  var theControlers = {
+    /** 空的控制器 */
+    "empty": ['$scope', function ($scope) {}],
+
+    /** 一般的 input 绑定 */
+    "input": ['$scope', function ($scope) {
+      var _this9 = this;
+
+      this.$onChanges = function (changes) {
+        if (changes.initValue) {
+          $scope.value = changes.initValue.currentValue;
+        }
+      };
+      $scope.change = function (value) {
+        //console.log("ng-change", value);
+        _this9.onChange({ value: value });
+      };
+    }],
+
+    /** 一般的显示 */
+    "input-show": ['$scope', function ($scope) {
+      this.$onChanges = function (changes) {
+        if (changes.initValue) {
+          $scope.value = changes.initValue.currentValue;
+        }
+      };
+    }],
+
+    /** 下拉框 */
+    "dropdown": ["$scope", "$timeout", "$http", "$q", "DjWaiteReady", function ($scope, $timeout, $http, $q, DjWaiteReady) {
+      var _this10 = this;
+
+      var configReady = new DjWaiteReady();
+      $scope.value = '';
+      $scope.selected = '';
+      $scope.onToggle = function (open) {
+        $scope.focusInput = false;
+        open && $timeout(function () {
+          $scope.focusInput = true;
+        }, 50);
+      };
+      $scope.click = function (item) {
+        $scope.selected = item;
+        _this10.onChange({ value: item.value || item });
+      };
+      $scope.filter = function (searchText) {
+        if (!searchText) {
+          $scope.list = $scope.list_full;
+        } else {
+          var pattern = new RegExp(searchText.split('').join('\s*'), 'i');
+          $scope.list = $scope.list_full.filter(function (item) {
+            return pattern.test(item.value ? item.value + '-' + item.title : item);
+          });
+        }
+      };
+
+      this.$onChanges = function (changes) {
+        if (changes.configs) {
+          var configs = changes.configs.currentValue;
+          if (!configs || !configs.param) return;
+          //$scope.list = this.configs.param.list;
+          //$scope.list_full = this.configs.param.list;
+          //console.log('原下拉列表, list: ', $scope.list);
+          //console.log('组件,', this.configs.name, ",", $scope.id);
+          //$scope.list_full = this.configs.param.list;
+          $scope.searchMode = configs.param.searchMode;
+          /** 通知配置已初始化 */
+          initDropdownList(configs.param, $http, $q).then(function (list) {
+            $scope.list = $scope.list_full = list;
+            calcSelected();
+            configReady.resolve(configs);
+          }).catch(function (e) {
+            $scope.list = $scope.list_full = [];
+          });
+        }
+        if (changes.initValue) {
+          $scope.value = changes.initValue.currentValue;
+          configReady.ready(function (configs) {
+            // 不重新获取（当值初始化，或被上级再改变时）
+            initDropdownList(configs.param, $http, $q).then(function (list) {
+              $scope.list = $scope.list_full = list;
+              calcSelected();
+            });
+          });
+        }
+      };
+
+      /**
+       * 根据 $scope.value 计算选中项
+       * 要求：list 已初始化
+       */
+      var calcSelected = function calcSelected() {
+        if (!$scope.list) return;
+        $scope.selected = $scope.list.find(function (item) {
+          return (item.value || item) == $scope.value;
+        });
+      };
+    }],
+
+    /** 下拉框 - 显示 */
+    "dropdown-show": ["$scope", "$timeout", "$http", "$q", "DjWaiteReady", function ($scope, $timeout, $http, $q, DjWaiteReady) {
+      this.$onChanges = function (changes) {
+        if (changes.configs) $scope.configs = changes.configs.currentValue;
+        if (changes.initValue) $scope.value = changes.initValue.currentValue;
+        getValueText($scope.configs, $scope.value);
+      };
+      function getValueText(configs, value) {
+        $scope.text = '';
+        if (!configs || !value) return;
+        initDropdownList(configs.param, $http, $q).then(function (list) {
+          var item = list.find(function (item) {
+            return item.value == value || item == value;
+          });
+          if (item) {
+            $scope.text = item.title || item;
+          }
+        });
+      }
+    }],
+
+    /** 下拉编辑框 */
+    "combobox": ["$scope", "$http", "$q", function ($scope, $http, $q) {
+
+      this.$onChanges = function (changes) {
+        if (changes.configs) {
+          var configs = changes.configs.currentValue;
+          if (!configs || !configs.param) return;
+          /** 配置变化时，重新计算列表 */
+          initDropdownList(configs.param, $http, $q).then(function (list) {
+            $scope.list = list;
+            calcSelected();
+          }).catch(function (e) {
+            $scope.list = [];
+          });
+        }
+        if (changes.initValue) {
+          $scope.value = changes.initValue.currentValue;
+          calcSelected();
+        }
+      };
+      /**
+       * 根据 $scope.value 计算选中项
+       * 要求：list 已初始化
+       */
+      var calcSelected = function calcSelected() {
+        if (!$scope.list) return;
+        $scope.selected = $scope.list.find(function (item) {
+          return (item.value || item) == $scope.value;
+        });
+      };
+    }],
+
+    /** 多选标签 */
+    "tags": ["$scope", "$http", "$q", function ($scope, $http, $q) {
+      this.$onChanges = function (changes) {
+        if (changes.configs) {
+          var configs = changes.configs.currentValue;
+          if (!configs || !configs.param) return;
+          /** 配置变化时，重新计算列表 */
+          initDropdownList(configs.param, $http, $q).then(function (list) {
+            $scope.list = list;
+          }).catch(function (e) {
+            $scope.list = [];
+          });
+        }
+        if (changes.initValue) {
+          $scope.value = changes.initValue.currentValue;
+        }
+      };
+    }],
+
+    /** 下拉框 - 显示 */
+    "tags-show": ["$scope", "$http", "$q", "DjWaiteReady", function ($scope, $http, $q, DjWaiteReady) {
+      $scope.value = [];
+      this.$onChanges = function (changes) {
+        if (changes.configs) $scope.configs = changes.configs.currentValue;
+        if (changes.initValue) $scope.value = changes.initValue.currentValue;
+        getValueText($scope.configs, $scope.value);
+      };
+      function getValueText(configs, value) {
+        $scope.text = '';
+        if (!configs || !value) return;
+        initDropdownList(configs.param, $http, $q).then(function (list) {
+          $scope.value = value.map(function (v) {
+            var item = list.find(function (item) {
+              return item.value == v || item == v;
+            });
+            return item && item.value || item || v;
+          });
+        });
+      }
+    }],
+
+    /** 单选框 */
+    "radio": ["$scope", function ($scope) {}],
+
+    /** 复选框 */
+    "check-box": ["$scope", function ($scope) {}],
+
+    /** 图片上传 */
+    "imgs-uploader": ["$scope", function ($scope) {
+      var _this11 = this;
+
+      $scope.initValue = [];
+      this.$onChanges = function (changes) {
+        if (changes.initValue) {
+          var initValue = changes.initValue.currentValue || [];
+          if (!angular.isArray(initValue)) initValue = [];
+          $scope.initValue = initValue;
+        }
+      };
+      $scope.onChange = function (imgs) {
+        _this11.onChange({ value: imgs });
+      };
+    }]
+  };
+  var theTemplates = {
+    /** 几个通用显示(未格式化) */
+    "initValue-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <span class="b">{{$ctrl.initValue}}</span>\n      </div>',
+    "text-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <span class="b">{{text}}</span>\n      </div>',
+    "textarea-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <span class="b" br-text="{{$ctrl.initValue}}"></span>\n      </div>',
+
+    /** 几个通用显示 (格式化) */
+    "initValue-format-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <span class="b">{{$ctrl.initValue|formFormat:($ctrl.configs.show.format)}}</span>\n      </div>',
+    "text-format-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <span class="b">{{text|formFormat:($ctrl.configs.show.format)}}</span>\n      </div>',
+
+    /** 文本框 */
+    "input": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <djui-input class="b flex"\n        param="$ctrl.configs.param"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-input>',
+
+    /** 日期框 */
+    "date": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <djui-date class="b flex"\n        param="$ctrl.configs.param"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-date>',
+
+    /** 多行文本 */
+    "textarea": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <textarea class="b"\n        ng-model="value"\n        ng-change="change(value)"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n      ></textarea>',
+
+    /** 下拉框 */
+    "dropdown": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <div class="b inputs flex flex-v-center">\n        <div class="placeholder">{{$ctrl.configs.param.placeholder||\'\'}}</div>\n        <select class="b item-body {{!value&&\'empty\'}}" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n          <option value=""></option>\n          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>\n        </select>\n      </div>\n      ',
+
+    /** 下拉编辑框 */
+    "combobox": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <div class="b inputs">\n        <select class="item-body" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n          <option value=""></option>\n          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>\n        </select>\n        <div class="caret-down flex flex-v-center"><div></div></div>\n        <djui-input class="flex"\n          param="$ctrl.configs.param"\n          placeholder="{{$ctrl.configs.param.placeholder}}"\n          init-value="$ctrl.initValue"\n          on-change="$ctrl.onChange({value: value})"\n        ></djui-input>\n      </div>\n      ',
+
+    /** 多标签选择 */
+    "tags": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <djui-tags class="item-body"\n        list="list"\n        init-value="value"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-tags>\n      ',
+    "tags-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <djui-tags-show class="b item-body" list="value"></djui-tags-show>\n      </div>\n      ',
+
+    /** 单选框 */
+    "radio": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n    ',
+
+    /** 复选框 */
+    "check-box": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n    ',
+
+    /** 星星 */
+    "star": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <djui-star class=""\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-star>\n    ',
+    "star-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <djui-star class="b"\n          init-value="$ctrl.initValue"\n          on-change="$ctrl.onChange({value: value})"\n          mode="show"\n        ></djui-star>\n      </div>\n    ',
+
+    /** 图片上传 */
+    "imgs-uploader": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <imgs-uploader class="padding-v-1"\n        imgs="initValue"\n        update-img="onChange(imgs)"\n      ></imgs-uploader>',
+    "imgs-uploader-show": '\n      <div class="flex">\n        <imgs-uploader class="ab padding-v-1 {{$ctrl.configs.css.hostBodyShow}}"\n          imgs="$ctrl.initValue"\n          mode="show"\n        ></imgs-uploader>\n      </div>\n    '
+  };
+
+  var theComponentDefines = [{ name: "input", showTemplate: "initValue-format-show" }, { name: "date", controller: "input" }, { name: "textarea", showTemplate: "textarea-show", controller: "input" }, { name: "dropdown", showTemplate: "text-format-show", showController: "dropdown-show" }, { name: "combobox", showTemplate: "initValue-format-show", showController: "dropdown-show" }, { name: "tags" }, { name: "radio" }, { name: "star", controller: "input" }, { name: "check-box" }, { name: "imgs-uploader" }];
+  /** 强制引用 */
+  var theComponentDefineRefs = {
+    select: "dropdown",
+    combo: "combobox"
+  };
+
+  function getSafeDefine(type) {
+    if (theComponentDefineRefs[type]) return getSafeDefine(theComponentDefineRefs[type]);
+    var def = theComponentDefines.find(function (item) {
+      return item.name == type;
+    });
+    if (!def) def = theComponentDefines.find(function (item) {
+      return item.name == 'input';
+    });
+    return def;
+  }
+  function getSafeType(type) {
+    return getSafeDefine(type).name;
+  }
+  function getTemplateEdit(type) {
+    var def = getSafeDefine(type);
+    /** 强行定义的 */
+    if (def.editTemplate) {
+      return theTemplates[def.editTemplate];
+    }
+    /** 默认定义的 */
+    if (theTemplates[type]) {
+      return theTemplates[type];
+    }
+    return theTemplates["input"];
+  }
+  function getTemplateShow(type) {
+    var def = getSafeDefine(type);
+    /** 强行定义的 */
+    if (def.showTemplate) {
+      return theTemplates[def.showTemplate];
+    }
+    /** 默认定义的 */
+    if (theTemplates[type + "-show"]) {
+      return theTemplates[type + "-show"];
+    }
+    return theTemplates["initValue-format-show"];
+  }
+  function getControllerEdit(type) {
+    var def = getSafeDefine(type);
+    /** 强行定义的 */
+    if (def.editController) {
+      return theControlers[def.editController];
+    }
+    /** 默认定义的 */
+    if (theControlers[type]) {
+      return theControlers[type];
+    }
+    return theControlers.input;
+  }
+  function getControllerShow(type) {
+    var def = getSafeDefine(type);
+    /** 强行定义的 */
+    if (def.showController) {
+      return theControlers[def.showController];
+    }
+    /** 默认定义的 */
+    if (theControlers[type + "-show"]) {
+      return theControlers[type + "-show"];
+    }
+    return theControlers.empty;
+  }
+
+  /** 默认模板注入，用于插座调用 */
+  theModule.value("DjFormDefaultTemplate", theTemplates);
+  theModule.value("DjFormDefaultDefine", {
+    getSafeType: getSafeType,
+    getTemplateEdit: getTemplateEdit,
+    getTemplateShow: getTemplateShow
+  });
+
+  /** 自动生成组件 */
+  function directiveNormalize(name) {
+    return name.replace(/[:\-_]+(.)/g, function (_, letter, offset) {
+      return offset ? letter.toUpperCase() : letter;
+    });
+  }
+  theComponentDefines.map(function (conponent) {
+    /** 所有编辑组件 */
+    theModule.component(directiveNormalize('' + DJ_FORM_DEFAULT.pre + conponent.name), {
+      bindings: {
+        configs: '<',
+        djDirty: '<',
+        djValid: '<',
+        invalidText: '<',
+        djRequire: '<',
+        initValue: '<',
+        onChange: '&'
+      },
+      template: "",
+      controller: getControllerEdit(conponent.name)
+    });
+    /** 所有显示组件 */
+    theModule.component(directiveNormalize('' + DJ_FORM_DEFAULT.pre + conponent.name + '-show'), {
+      bindings: {
+        configs: '<',
+        initValue: '<'
+      },
+      template: "",
+      controller: getControllerShow(conponent.name)
+    });
+  });
+
+  /** 默认的部分显示 */
+  theModule.directive(directiveNormalize('dj-form-default-tip'), function () {
+    return {
+      restrict: 'A',
+      template: '\n        <div class="flex title" dj-form-default-tip-mini></div>\n        <div class="prompt error">{{$ctrl.djValid && \' \' || $ctrl.invalidText || \'incorrect\'}}</div>\n      '
+    };
+  }).directive(directiveNormalize('dj-form-default-tip-mini'), function () {
+    return {
+      restrict: 'A',
+      template: '\n        <div class="require">{{$ctrl.djRequire && \'*\' || \'\'}}</div>\n        <div class="prompt-text">{{$ctrl.configs.title}}</div>\n      '
+    };
+  });
+}(window, angular);
 !function (window, angular, undefined) {
 
   var theModule = angular.module('dj-pop');
@@ -1136,7 +1553,7 @@ angular.module('dj-form').filter('formFormat', function () {
     },
     template: '\n      <div class="feedback-top" ng-if="item.praise.length || item.feedback.length">\n      </div>\n      <div class="praise-list" ng-if="item.praise.length">\n        <span>&hearts;</span>\n        <span class="" ng-repeat="uid in item.praise track by $index">{{user[uid].nickname}}</span>\n      </div>\n      <div class="feedback-list" ng-if="item.feedback.length">\n        <div class="feedback-item" ng-mousedown="clickItem(item, feed.uid)" ng-repeat="feed in item.feedback track by $index">\n          <span class="username">{{user[feed.uid].nickname}}</span>\n          <span ng-if="feed.attr.fuid && feed.attr.fuid!=\'0\'"> \u56DE\u590D <span class="username">{{user[feed.attr.fuid].nickname}}</span></span>\n          <span class="feedback-content">: {{feed.attr.content}}</span>\n        </div>\n      </div>\n    ',
     controller: ["$scope", "$http", "$q", "$animateCss", function ($scope, $http, $q, $animateCss) {
-      var _this9 = this;
+      var _this12 = this;
 
       this.$onChanges = function (changes) {
         if (changes.item) {
@@ -1149,7 +1566,7 @@ angular.module('dj-form').filter('formFormat', function () {
 
       /** 点击 */
       $scope.clickItem = function (item, fuid) {
-        _this9.clickItem({ item: item, fuid: fuid });
+        _this12.clickItem({ item: item, fuid: fuid });
       };
     }]
   });
@@ -1722,7 +2139,7 @@ angular.module('dj-form').filter('formFormat', function () {
     transclude: true,
     template: '<span>{{$ctrl.text}}</span>',
     controller: ["$scope", "$element", "$q", "$animateCss", function ($scope, $element, $q, $animateCss) {
-      var _this10 = this;
+      var _this13 = this;
 
       this.$onChanges = function (changes) {
         if (changes.delay) {
@@ -1732,7 +2149,7 @@ angular.module('dj-form').filter('formFormat', function () {
           show(delay);
         }
         if (changes.text) {
-          show(_this10.delay);
+          show(_this13.delay);
         }
       };
 
@@ -1785,420 +2202,6 @@ angular.module('dj-form').filter('formFormat', function () {
         });
       }
     }]
-  });
-}(window, angular);
-/**
- * 动态表单-所有子组件
- * ver: 0.1.0
- * build: 2018-04-26
- * power by LJH.
- */
-!function (window, angular, undefined) {
-  var DJ_FORM_DEFAULT = {
-    pre: "dj-form-default-item-"
-  };
-
-  var theModule = angular.module('dj-form');
-
-  /**
-   * 初始化下拉列表
-   * @param {*} param 要初始化列表的参数
-   */
-  function initDropdownList(param, $http, $q) {
-    //console.log('获取下拉列表, param =', param);
-    if (!param || !param.list) return $q.when([]);
-    if (angular.isString(param.list)) {
-      return $http.post('获取下拉列表', param.list).then(function (json) {
-        //console.log('获取下拉列表, json =', json);
-        return $q.when(json.list);
-      }).catch(function (e) {
-        //console.log('获取下拉列表, 失败: ', e);
-        return $q.reject([]);
-      });
-    }
-    if (angular.isFunction(param.list)) {
-      return $q.when(param.list());
-    }
-    return $q.when(param.list);
-  }
-
-  var theControlers = {
-    /** 空的控制器 */
-    "empty": ['$scope', function ($scope) {}],
-
-    /** 一般的 input 绑定 */
-    "input": ['$scope', function ($scope) {
-      var _this11 = this;
-
-      this.$onChanges = function (changes) {
-        if (changes.initValue) {
-          $scope.value = changes.initValue.currentValue;
-        }
-      };
-      $scope.change = function (value) {
-        //console.log("ng-change", value);
-        _this11.onChange({ value: value });
-      };
-    }],
-
-    /** 一般的显示 */
-    "input-show": ['$scope', function ($scope) {
-      this.$onChanges = function (changes) {
-        if (changes.initValue) {
-          $scope.value = changes.initValue.currentValue;
-        }
-      };
-    }],
-
-    /** 下拉框 */
-    "dropdown": ["$scope", "$timeout", "$http", "$q", "DjWaiteReady", function ($scope, $timeout, $http, $q, DjWaiteReady) {
-      var _this12 = this;
-
-      var configReady = new DjWaiteReady();
-      $scope.value = '';
-      $scope.selected = '';
-      $scope.onToggle = function (open) {
-        $scope.focusInput = false;
-        open && $timeout(function () {
-          $scope.focusInput = true;
-        }, 50);
-      };
-      $scope.click = function (item) {
-        $scope.selected = item;
-        _this12.onChange({ value: item.value || item });
-      };
-      $scope.filter = function (searchText) {
-        if (!searchText) {
-          $scope.list = $scope.list_full;
-        } else {
-          var pattern = new RegExp(searchText.split('').join('\s*'), 'i');
-          $scope.list = $scope.list_full.filter(function (item) {
-            return pattern.test(item.value ? item.value + '-' + item.title : item);
-          });
-        }
-      };
-
-      this.$onChanges = function (changes) {
-        if (changes.configs) {
-          var configs = changes.configs.currentValue;
-          if (!configs || !configs.param) return;
-          //$scope.list = this.configs.param.list;
-          //$scope.list_full = this.configs.param.list;
-          //console.log('原下拉列表, list: ', $scope.list);
-          //console.log('组件,', this.configs.name, ",", $scope.id);
-          //$scope.list_full = this.configs.param.list;
-          $scope.searchMode = configs.param.searchMode;
-          /** 通知配置已初始化 */
-          initDropdownList(configs.param, $http, $q).then(function (list) {
-            $scope.list = $scope.list_full = list;
-            calcSelected();
-            configReady.resolve(configs);
-          }).catch(function (e) {
-            $scope.list = $scope.list_full = [];
-          });
-        }
-        if (changes.initValue) {
-          $scope.value = changes.initValue.currentValue;
-          configReady.ready(function (configs) {
-            // 不重新获取（当值初始化，或被上级再改变时）
-            initDropdownList(configs.param, $http, $q).then(function (list) {
-              $scope.list = $scope.list_full = list;
-              calcSelected();
-            });
-          });
-        }
-      };
-
-      /**
-       * 根据 $scope.value 计算选中项
-       * 要求：list 已初始化
-       */
-      var calcSelected = function calcSelected() {
-        if (!$scope.list) return;
-        $scope.selected = $scope.list.find(function (item) {
-          return (item.value || item) == $scope.value;
-        });
-      };
-    }],
-
-    /** 下拉框 - 显示 */
-    "dropdown-show": ["$scope", "$timeout", "$http", "$q", "DjWaiteReady", function ($scope, $timeout, $http, $q, DjWaiteReady) {
-      this.$onChanges = function (changes) {
-        if (changes.configs) $scope.configs = changes.configs.currentValue;
-        if (changes.initValue) $scope.value = changes.initValue.currentValue;
-        getValueText($scope.configs, $scope.value);
-      };
-      function getValueText(configs, value) {
-        $scope.text = '';
-        if (!configs || !value) return;
-        initDropdownList(configs.param, $http, $q).then(function (list) {
-          var item = list.find(function (item) {
-            return item.value == value || item == value;
-          });
-          if (item) {
-            $scope.text = item.title || item;
-          }
-        });
-      }
-    }],
-
-    /** 下拉编辑框 */
-    "combobox": ["$scope", "$http", "$q", function ($scope, $http, $q) {
-
-      this.$onChanges = function (changes) {
-        if (changes.configs) {
-          var configs = changes.configs.currentValue;
-          if (!configs || !configs.param) return;
-          /** 配置变化时，重新计算列表 */
-          initDropdownList(configs.param, $http, $q).then(function (list) {
-            $scope.list = list;
-            calcSelected();
-          }).catch(function (e) {
-            $scope.list = [];
-          });
-        }
-        if (changes.initValue) {
-          $scope.value = changes.initValue.currentValue;
-          calcSelected();
-        }
-      };
-      /**
-       * 根据 $scope.value 计算选中项
-       * 要求：list 已初始化
-       */
-      var calcSelected = function calcSelected() {
-        if (!$scope.list) return;
-        $scope.selected = $scope.list.find(function (item) {
-          return (item.value || item) == $scope.value;
-        });
-      };
-    }],
-
-    /** 多选标签 */
-    "tags": ["$scope", "$http", "$q", function ($scope, $http, $q) {
-      this.$onChanges = function (changes) {
-        if (changes.configs) {
-          var configs = changes.configs.currentValue;
-          if (!configs || !configs.param) return;
-          /** 配置变化时，重新计算列表 */
-          initDropdownList(configs.param, $http, $q).then(function (list) {
-            $scope.list = list;
-          }).catch(function (e) {
-            $scope.list = [];
-          });
-        }
-        if (changes.initValue) {
-          $scope.value = changes.initValue.currentValue;
-        }
-      };
-    }],
-
-    /** 下拉框 - 显示 */
-    "tags-show": ["$scope", "$http", "$q", "DjWaiteReady", function ($scope, $http, $q, DjWaiteReady) {
-      $scope.value = [];
-      this.$onChanges = function (changes) {
-        if (changes.configs) $scope.configs = changes.configs.currentValue;
-        if (changes.initValue) $scope.value = changes.initValue.currentValue;
-        getValueText($scope.configs, $scope.value);
-      };
-      function getValueText(configs, value) {
-        $scope.text = '';
-        if (!configs || !value) return;
-        initDropdownList(configs.param, $http, $q).then(function (list) {
-          $scope.value = value.map(function (v) {
-            var item = list.find(function (item) {
-              return item.value == v || item == v;
-            });
-            return item && item.value || item || v;
-          });
-        });
-      }
-    }],
-
-    /** 单选框 */
-    "radio": ["$scope", function ($scope) {}],
-
-    /** 复选框 */
-    "check-box": ["$scope", function ($scope) {}],
-
-    /** 图片上传 */
-    "imgs-uploader": ["$scope", function ($scope) {
-      var _this13 = this;
-
-      $scope.initValue = [];
-      this.$onChanges = function (changes) {
-        if (changes.initValue) {
-          var initValue = changes.initValue.currentValue || [];
-          if (!angular.isArray(initValue)) initValue = [];
-          $scope.initValue = initValue;
-        }
-      };
-      $scope.onChange = function (imgs) {
-        _this13.onChange({ value: imgs });
-      };
-    }]
-  };
-  var theTemplates = {
-    /** 几个通用显示(未格式化) */
-    "initValue-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <span class="b">{{$ctrl.initValue}}</span>\n      </div>',
-    "text-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <span class="b">{{text}}</span>\n      </div>',
-    "textarea-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <span class="b" br-text="{{$ctrl.initValue}}"></span>\n      </div>',
-
-    /** 几个通用显示 (格式化) */
-    "initValue-format-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <span class="b">{{$ctrl.initValue|formFormat:($ctrl.configs.show.format)}}</span>\n      </div>',
-    "text-format-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <span class="b">{{text|formFormat:($ctrl.configs.show.format)}}</span>\n      </div>',
-
-    /** 文本框 */
-    "input": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <djui-input class="b flex"\n        param="$ctrl.configs.param"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-input>',
-
-    /** 多行文本 */
-    "textarea": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <textarea class="b"\n        ng-model="value"\n        ng-change="change(value)"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n      ></textarea>',
-
-    /** 下拉框 */
-    "dropdown": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <div class="b inputs flex flex-v-center">\n        <div class="placeholder">{{$ctrl.configs.param.placeholder||\'\'}}</div>\n        <select class="b item-body {{!value&&\'empty\'}}" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n          <option value=""></option>\n          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>\n        </select>\n      </div>\n      ',
-
-    /** 下拉编辑框 */
-    "combobox": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <div class="b inputs">\n        <select class="item-body" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n          <option value=""></option>\n          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>\n        </select>\n        <div class="caret-down flex flex-v-center"><div></div></div>\n        <djui-input class="flex"\n          param="$ctrl.configs.param"\n          placeholder="{{$ctrl.configs.param.placeholder}}"\n          init-value="$ctrl.initValue"\n          on-change="$ctrl.onChange({value: value})"\n        ></djui-input>\n      </div>\n      ',
-
-    /** 多标签选择 */
-    "tags": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <djui-tags class="item-body"\n        list="list"\n        init-value="value"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-tags>\n      ',
-    "tags-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <djui-tags-show class="b item-body" list="value"></djui-tags-show>\n      </div>\n      ',
-
-    /** 单选框 */
-    "radio": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n    ',
-
-    /** 复选框 */
-    "check-box": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n    ',
-
-    /** 星星 */
-    "star": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <djui-star class=""\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-star>\n    ',
-    "star-show": '\n      <div flex-row="5em" class="{{$ctrl.configs.css.hostBodyShow}}">\n        <span class="a">{{$ctrl.configs.title}}</span>\n        <djui-star class="b"\n          init-value="$ctrl.initValue"\n          on-change="$ctrl.onChange({value: value})"\n          mode="show"\n        ></djui-star>\n      </div>\n    ',
-
-    /** 图片上传 */
-    "imgs-uploader": '\n      <div class="flex prompt-top" dj-form-default-tip></div>\n      <imgs-uploader class="padding-v-1"\n        imgs="initValue"\n        update-img="onChange(imgs)"\n      ></imgs-uploader>',
-    "imgs-uploader-show": '\n      <div class="flex">\n        <imgs-uploader class="ab padding-v-1 {{$ctrl.configs.css.hostBodyShow}}"\n          imgs="$ctrl.initValue"\n          mode="show"\n        ></imgs-uploader>\n      </div>\n    '
-  };
-
-  var theComponentDefines = [{ name: "input", showTemplate: "initValue-format-show" }, { name: "textarea", showTemplate: "textarea-show", controller: "input" }, { name: "dropdown", showTemplate: "text-format-show", showController: "dropdown-show" }, { name: "combobox", showTemplate: "initValue-format-show", showController: "dropdown-show" }, { name: "tags" }, { name: "radio" }, { name: "star", controller: "input" }, { name: "check-box" }, { name: "imgs-uploader" }];
-  /** 强制引用 */
-  var theComponentDefineRefs = {
-    select: "dropdown",
-    combo: "combobox"
-  };
-
-  function getSafeDefine(type) {
-    if (theComponentDefineRefs[type]) return getSafeDefine(theComponentDefineRefs[type]);
-    var def = theComponentDefines.find(function (item) {
-      return item.name == type;
-    });
-    if (!def) def = theComponentDefines.find(function (item) {
-      return item.name == 'input';
-    });
-    return def;
-  }
-  function getSafeType(type) {
-    return getSafeDefine(type).name;
-  }
-  function getTemplateEdit(type) {
-    var def = getSafeDefine(type);
-    /** 强行定义的 */
-    if (def.editTemplate) {
-      return theTemplates[def.editTemplate];
-    }
-    /** 默认定义的 */
-    if (theTemplates[type]) {
-      return theTemplates[type];
-    }
-    return theTemplates["input"];
-  }
-  function getTemplateShow(type) {
-    var def = getSafeDefine(type);
-    /** 强行定义的 */
-    if (def.showTemplate) {
-      return theTemplates[def.showTemplate];
-    }
-    /** 默认定义的 */
-    if (theTemplates[type + "-show"]) {
-      return theTemplates[type + "-show"];
-    }
-    return theTemplates["initValue-format-show"];
-  }
-  function getControllerEdit(type) {
-    var def = getSafeDefine(type);
-    /** 强行定义的 */
-    if (def.editController) {
-      return theControlers[def.editController];
-    }
-    /** 默认定义的 */
-    if (theControlers[type]) {
-      return theControlers[type];
-    }
-    return theControlers.input;
-  }
-  function getControllerShow(type) {
-    var def = getSafeDefine(type);
-    /** 强行定义的 */
-    if (def.showController) {
-      return theControlers[def.showController];
-    }
-    /** 默认定义的 */
-    if (theControlers[type + "-show"]) {
-      return theControlers[type + "-show"];
-    }
-    return theControlers.empty;
-  }
-
-  /** 默认模板注入，用于插座调用 */
-  theModule.value("DjFormDefaultTemplate", theTemplates);
-  theModule.value("DjFormDefaultDefine", {
-    getSafeType: getSafeType,
-    getTemplateEdit: getTemplateEdit,
-    getTemplateShow: getTemplateShow
-  });
-
-  /** 自动生成组件 */
-  function directiveNormalize(name) {
-    return name.replace(/[:\-_]+(.)/g, function (_, letter, offset) {
-      return offset ? letter.toUpperCase() : letter;
-    });
-  }
-  theComponentDefines.map(function (conponent) {
-    /** 所有编辑组件 */
-    theModule.component(directiveNormalize('' + DJ_FORM_DEFAULT.pre + conponent.name), {
-      bindings: {
-        configs: '<',
-        djDirty: '<',
-        djValid: '<',
-        invalidText: '<',
-        djRequire: '<',
-        initValue: '<',
-        onChange: '&'
-      },
-      template: "",
-      controller: getControllerEdit(conponent.name)
-    });
-    /** 所有显示组件 */
-    theModule.component(directiveNormalize('' + DJ_FORM_DEFAULT.pre + conponent.name + '-show'), {
-      bindings: {
-        configs: '<',
-        initValue: '<'
-      },
-      template: "",
-      controller: getControllerShow(conponent.name)
-    });
-  });
-
-  /** 默认的部分显示 */
-  theModule.directive(directiveNormalize('dj-form-default-tip'), function () {
-    return {
-      restrict: 'A',
-      template: '\n        <div class="flex title" dj-form-default-tip-mini></div>\n        <div class="prompt error">{{$ctrl.djValid && \' \' || $ctrl.invalidText || \'incorrect\'}}</div>\n      '
-    };
-  }).directive(directiveNormalize('dj-form-default-tip-mini'), function () {
-    return {
-      restrict: 'A',
-      template: '\n        <div class="require">{{$ctrl.djRequire && \'*\' || \'\'}}</div>\n        <div class="prompt-text">{{$ctrl.configs.title}}</div>\n      '
-    };
   });
 }(window, angular);
 /**
@@ -2273,6 +2276,91 @@ angular.module('dj-form').filter('formFormat', function () {
     };
   }]);
 }(window, angular);
+
+!function (window, angular, undefined) {
+
+  angular.module('dj-ui').component('djuiDate', {
+    bindings: {
+      initValue: '<',
+      onChange: '&',
+      format: '<',
+      param: '<',
+      placeholder: '@'
+    },
+    template: '\n        <div class="flex djui-input-box">\n          <input class="flex-1" type="date"\n            placeholder="{{$ctrl.placeholder}}"\n            ng-model="ngModel"\n            ng-change="onChange(ngModel)"\n          >\n        </div>\n        ',
+    controller: ['$scope', '$http', '$timeout', "$q", ctrl]
+  });
+
+  function ctrl($scope, $http, $timeout, $q) {
+    var _this14 = this;
+
+    this.$onChanges = function (changes) {
+      if (changes.initValue) {
+        var str = changes.initValue.currentValue || "";
+        $scope.ngModel = new Date(Date.parse(str.replace(/-/g, "/")));
+      }
+    };
+
+    $scope.onChange = function (value) {
+      var format = _this14.format || _this14.param && _this14.param.format || 'yyyy-MM-dd';
+      if (value === undefined) return;
+      _this14.onChange({ value: timeFormat(value, format) });
+    };
+  }
+
+  angular.module('dj-ui').filter('timespan', function () {
+    //可以注入依赖
+    return function (timespan, format) {
+      var d = new Date();
+      d.setTime(timespan * 1000);
+      return timeFormat(d, format || "yyyy-MM-dd");
+    };
+  });
+
+  /** * 对Date的扩展，将 Date 转化为指定格式的String * 月(M)、日(d)、12小时(h)、24小时(H)、分(m)、秒(s)、周(E)、季度(q)
+    可以用 1-2 个占位符 * 年(y)可以用 1-4 个占位符，毫秒(S)只能用 1 个占位符(是 1-3 位的数字) * eg: * (new
+    Date()).pattern("yyyy-MM-dd hh:mm:ss.S")==> 2006-07-02 08:09:04.423
+   * (new Date()).pattern("yyyy-MM-dd E HH:mm:ss") ==> 2009-03-10 二 20:09:04
+   * (new Date()).pattern("yyyy-MM-dd EE hh:mm:ss") ==> 2009-03-10 周二 08:09:04
+   * (new Date()).pattern("yyyy-MM-dd EEE hh:mm:ss") ==> 2009-03-10 星期二 08:09:04
+   * (new Date()).pattern("yyyy-M-d h:m:s.S") ==> 2006-7-2 8:9:4.18
+   */
+  function timeFormat(t, fmt) {
+    if (!(t instanceof Date)) return "";
+    var o = {
+      "M+": t.getMonth() + 1, //月份
+      "d+": t.getDate(), //日
+      "h+": t.getHours() % 12 == 0 ? 12 : t.getHours() % 12, //小时
+      "H+": t.getHours(), //小时
+      "m+": t.getMinutes(), //分
+      "s+": t.getSeconds(), //秒
+      "q+": Math.floor((t.getMonth() + 3) / 3), //季度
+      "S": t.getMilliseconds() //毫秒
+    };
+    var week = {
+      "0": "/u65e5",
+      "1": "/u4e00",
+      "2": "/u4e8c",
+      "3": "/u4e09",
+      "4": "/u56db",
+      "5": "/u4e94",
+      "6": "/u516d"
+    };
+    if (/(y+)/.test(fmt)) {
+      fmt = fmt.replace(RegExp.$1, (t.getFullYear() + "").substr(4 - RegExp.$1.length));
+    }
+    if (/(E+)/.test(fmt)) {
+      fmt = fmt.replace(RegExp.$1, (RegExp.$1.length > 1 ? RegExp.$1.length > 2 ? "/u661f/u671f" : "/u5468" : "") + week[t.getDay() + ""]);
+    }
+    for (var k in o) {
+      if (new RegExp("(" + k + ")").test(fmt)) {
+        fmt = fmt.replace(RegExp.$1, RegExp.$1.length == 1 ? o[k] : ("00" + o[k]).substr(("" + o[k]).length));
+      }
+    }
+    return fmt;
+  }
+}(window, angular);
+
 /**
  * 对话框组件
  * ver: 0.0.1
@@ -2378,7 +2466,7 @@ angular.module('dj-form').filter('formFormat', function () {
     replace: true,
     template: '\n      <div class="djui-gallery-box">\n        <div class="djui-gallery-list" ng-transclude>\n          <div class="djui-gallery-item item-{{$index+1-active}}" ng-repeat="img in imgs track by $index" >\n            <img class="" ng-src="{{img}}"/>\n          </div>\n        </div>\n        <div class="djui-gallery-debug" ng-if="debug">\n          {{debug}}\n        </div>\n        <div class="djui-gallery-top" ng-if="isMoving">\n        </div>\n      </div>\n      <div class="djui-gallery-nav flex flex-between">\n        <div class="dots flex flex-1 flex-center" ng-if="1">\n          <div ng-click="scrollTo($index)" ng-repeat="img in imgs track by $index">{{$index==active&&\'\u25CF\'||\'\u25CB\'}}</div>\n        </div>\n        <div class="btns flex flex-center" ng-if="$ctrl.btns.length">\n          <div ng-click="clickButton(btn)" ng-repeat="btn in $ctrl.btns track by $index">\n            <div class="{{btn.css}}">{{btn.text||\'\'}}</div>\n          </div>\n        </div>\n      </div>\n    ',
     controller: ["$scope", "$window", "$element", "$q", "$animateCss", function ($scope, $window, $element, $q, $animateCss) {
-      var _this14 = this;
+      var _this15 = this;
 
       $scope.active = 0;
       $scope.pageCount = 1;
@@ -2550,7 +2638,7 @@ angular.module('dj-form').filter('formFormat', function () {
         animator.start().then(function (a) {
           //console.log("动画结束, a = ", a);
           $scope.active = nth;
-          _this14.onPage({ page: nth });
+          _this15.onPage({ page: nth });
         }).catch(function (e) {
           console.log("动画结束, e = ", e);
         });
@@ -2919,7 +3007,7 @@ angular.module('dj-form').filter('formFormat', function () {
   });
 
   function ctrl($scope, $http, IMG, DjPop) {
-    var _this15 = this;
+    var _this16 = this;
 
     var imgData = this.imgData = { uploadings: [] };
     $scope.imgList = [];
@@ -2947,7 +3035,7 @@ angular.module('dj-form').filter('formFormat', function () {
         imgs.splice(n, 1);
         $scope.imgList = angular.merge([], imgs);;
         //console.log("删除图片", $scope.imgList);
-        _this15.updateImg({ imgs: $scope.imgList });
+        _this16.updateImg({ imgs: $scope.imgList });
       });
     };
     $scope.clickImg = function (n) {
@@ -2955,7 +3043,7 @@ angular.module('dj-form').filter('formFormat', function () {
       DjPop.gallery({
         imgs: $scope.imgList,
         active: n,
-        btns: $scope.mode == "show" ? [] : [{ css: "icon-del", fn: _this15.deleteImg }]
+        btns: $scope.mode == "show" ? [] : [{ css: "icon-del", fn: _this16.deleteImg }]
       }).then(function (data) {
         //console.log("show-gallery", data);
       }).catch(function (data) {
@@ -2966,7 +3054,7 @@ angular.module('dj-form').filter('formFormat', function () {
       if ($scope.imgList.length >= $scope.maxCount) return;
       $scope.imgList.push(fn);
       //console.log("添加图片", $scope.imgList);
-      _this15.updateImg({ imgs: $scope.imgList });
+      _this16.updateImg({ imgs: $scope.imgList });
     };
 
     /**
