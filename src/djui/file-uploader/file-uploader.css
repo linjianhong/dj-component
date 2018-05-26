@@ -32,13 +32,13 @@ imgs-uploader > .box > .img.add:before{
   background: #cccccc;
 }
 imgs-uploader > .box > .img.add:before{
-  top: 2.5em;
+  top: 50%;
   left: 20%;
   width: 60%;
   height: 1px;
 }
 imgs-uploader > .box > .img.add:after{
-  left: 2.5em;
+  left: 50%;
   top: 20%;
   width: 1px;
   height: 60%;

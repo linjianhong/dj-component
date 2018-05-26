@@ -38,6 +38,7 @@
         maxCount: "<",
         imgs: "<",
         mode: '@',
+        onChange: "&",
         updateImg: "&" //选择图片更新用的回调函数
       },
       controller: ["$scope", "$http", "IMG", "DjPop", ctrl]
@@ -51,9 +52,7 @@
     }
     this.$onChanges = (changes) => {
       if (changes.imgs) {
-        var imgs = changes.imgs.currentValue || [];
-        $scope.imgList.splice(0, $scope.imgList.length);
-        imgs.map(url => $scope.imgList.push(url));
+        $scope.imgList = angular.merge([], changes.imgs.currentValue || []);
       }
       if (changes.maxCount) {
         $scope.maxCount = +changes.maxCount.currentValue || 9;
@@ -67,10 +66,13 @@
       if (n < 0 || n >= $scope.imgList.length) return;
       return DjPop.confirm("您确认要删除当前图片?").then(a => {
         imgs.splice(n, 1);
-        $scope.imgList = angular.merge([], imgs);;
+        $scope.imgList = angular.merge([], imgs);
+      }).then(()=>{
         //console.log("删除图片", $scope.imgList);
-        this.updateImg({ imgs: $scope.imgList });
-      });
+        var imgs = angular.merge([], $scope.imgList);
+        this.updateImg({ imgs, value: imgs });
+        this.onChange({ imgs, value: imgs });
+      })
     }
     $scope.clickImg = (n) => {
       //DjPop.show("show-gallery", {imgs: this.imgs, remove: this.deleteImg})
@@ -84,11 +86,13 @@
         console.log("EEE", data);
       })
     }
-    this.addImg = (fn) => {
+    this.addImg = (url) => {
       if ($scope.imgList.length >= $scope.maxCount) return;
-      $scope.imgList.push(fn);
+      $scope.imgList.push(url);
       //console.log("添加图片", $scope.imgList);
-      this.updateImg({ imgs: $scope.imgList });
+      var imgs = angular.merge([], $scope.imgList);
+      this.updateImg({ imgs, value: imgs });
+      this.onChange({ imgs, value: imgs });
     };
 
 
@@ -133,7 +137,7 @@
           e => {
             //console.info('上传失败, ', file, e);
             file.error = e;
-            setTimeout(()=>{
+            setTimeout(() => {
               var n = File.uploadingFiles.indexOf(file);
               File.uploadingFiles.splice(n, 1);
               $scope.$apply();
