@@ -32,8 +32,9 @@ gulp.task('make-css', function () {
 
 gulp.task('demo', function () {
   return gulp.src([
-    "bower_components/angular/angular.js",
-    "bower_components/angular-animate/angular-animate.js"
+    "bower_components/angular/angular.min.js",
+    "bower_components/angular-touch/angular-touch.min.js",
+    "bower_components/angular-animate/angular-animate.min.js"
   ])
     .pipe(gulp.dest("demo"));
 });

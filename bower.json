@@ -20,8 +20,9 @@
     "ui"
   ],
   "dependencies": {
-    "angular": "^1.6.0",
-    "angular-animate": "^1.6.0"
+    "angular": "1.6.0",
+    "angular-touch": "1.6.0",
+    "angular-animate": "1.6.0"
   },
   "license": "dj",
   "homepage": "https://github.com/linjianhong/dj-component"
