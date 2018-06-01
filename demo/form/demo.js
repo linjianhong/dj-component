@@ -3,6 +3,9 @@
 var theForm = {
   items: [
     { name: 't1', title: 'text1', type: 'input' },
+    { name: 't2', title: 'text2', type: 'input', param: { valid: { require: true } } },
+    { name: 't2', title: '自定义无显示', component: 'my-abc', param: { valid: { require: true } } },
+    { name: 't2', title: '自定义自动显示', componentEdit: 'my-abc', param: { valid: { require: true } } },
     {
       name: 't2', title: 'text2', type: 'input',
       show: {
@@ -39,7 +42,28 @@ var theForm = {
   }
 };
 
-angular.module('my-app', ['dj-form', 'dj-ui', 'dj-pop']).component('myApp', {
+var mainModule = angular.module('my-app', ['dj-form', 'dj-ui', 'dj-pop', 'ngTouch'])
+mainModule.component('myAbc', {
+  bindings: {
+    configs: '<',
+    initValue: '<',
+    onChange: '&',
+  },
+  template: `<input ng-model="value" ng-change="change(value)">`,
+  controller: ['$scope', function($scope){
+    this.$onChanges = (changes) => {
+      if (changes.initValue) {
+        $scope.value = changes.initValue.currentValue;
+      }
+    }
+    $scope.change = (value) => {
+      //console.log("ng-change", value);
+      this.onChange({ value });
+    };
+
+  }]
+});
+mainModule.component('myApp', {
   template: `
     <div class="editing" ng-click="mode=mode=='show'&&'edit'||'show'">
       <span class="{{mode!='show'&&'active'}}">可编辑</span> |

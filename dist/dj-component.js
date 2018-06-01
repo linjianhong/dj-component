@@ -71,15 +71,23 @@ angular.module('dj-ui', ['ngAnimate']);
     var _this2 = this;
 
     /** 编译生成动态子表单项 */
-    function compileConfigs(configs) {
+    var compileConfigs = function compileConfigs(configs) {
       if (!configs) {
         $element.html("");
+        return;
+      }
+      var componentName = configs.componentEdit || configs.component;
+      var css = configs.css.hostEdit || configs.css.host || 'normal';
+      if (componentName) {
+        var template = '\n          <div class="' + css + ' {{theValid.dirty&&\'ng-dirty\'||\'\'}} {{!theValid.valid&&\'ng-invalid\'||\'\'}}">\n            <div class="a flex prompt-top" dj-form-default-tip></div>\n            <' + componentName + '\n              configs="$ctrl.configs"\n              init-value="initValue"\n              on-change="onChange(value)"\n            ></' + componentName + '>\n          </div>';
+        $element.html(template);
+        $compile($element.contents())($scope);
         return;
       }
       var eleType = DjFormDefaultDefine.getSafeType(configs.type);
       var eleName = configs.pre + eleType;
       var css = configs.css.hostEdit || configs.css.host || 'normal';
-      var template = '\n        <' + eleName + '\n          class="' + css + ' {{dirty&&\'ng-dirty\'||\'\'}} {{!theValid.valid&&\'ng-invalid\'||\'\'}}"\n          configs="$ctrl.configs"\n          init-value="initValue"\n          on-change="onChange(value)"\n          invalid-text="theValid.tip"\n          dj-require="theValid.require"\n          dj-valid="theValid.valid"\n          dj-dirty="theValid.dirty"\n        ></' + eleName + '>\n      ';
+      var template = '\n        <' + eleName + '\n          class="' + css + ' {{theValid.dirty&&\'ng-dirty\'||\'\'}} {{!theValid.valid&&\'ng-invalid\'||\'\'}}"\n          configs="$ctrl.configs"\n          init-value="initValue"\n          on-change="onChange(value)"\n          the-valid="theValid"\n        ></' + eleName + '>\n      ';
       $element.html(template);
       var childElement = $compile($element.contents())($scope);
       var childScope = $scope.$$childHead;
@@ -89,7 +97,7 @@ angular.module('dj-ui', ['ngAnimate']);
     };
 
     /** 数据校验 */
-    var theValid = $scope.theValid = {
+    var theValid = $scope.theValid = this.theValid = {
       valid: true,
       require: false,
       tip: "", //错误提示
@@ -270,7 +278,7 @@ angular.module('dj-ui', ['ngAnimate']);
     }
 
     /** 编译生成动态子表单项 */
-    function compileConfigs(configs, value) {
+    var compileConfigs = function compileConfigs(configs, value) {
       //console.log("HOST 编译 ", configs, value);
       if (!configs) {
         $timeout(hideHost);
@@ -286,6 +294,16 @@ angular.module('dj-ui', ['ngAnimate']);
           $timeout(hideHost);
           return;
         }
+      }
+
+      /** 自定义控件情况 */
+      var componentName = configs.componentShow || configs.component;
+      var css = configs.css.hostShow || configs.css.host || 'normal';
+      if (componentName) {
+        var template = '\n          <div class="' + css + '">\n            <div flex-row="5em" class="{{configs.css.hostBodyShow}}">\n              <span class="a">{{configs.title}}</span>\n              <' + componentName + '\n                configs="$ctrl.configs"\n                init-value="initValue"\n              ></' + componentName + '>\n            </div>\n          </div>';
+        $element.html(template);
+        $compile($element.contents())($scope);
+        return;
       }
 
       /** 开始编译子组件 */
@@ -1527,12 +1545,12 @@ angular.module('dj-form').filter('formFormat', function () {
   theModule.directive(directiveNormalize('dj-form-default-tip'), function () {
     return {
       restrict: 'A',
-      template: '\n        <div class="flex title" dj-form-default-tip-mini></div>\n        <div class="prompt error">{{$ctrl.djValid && \' \' || $ctrl.invalidText || \'incorrect\'}}</div>\n      '
+      template: '\n        <div class="flex title" dj-form-default-tip-mini></div>\n        <div class="prompt error">{{$ctrl.theValid.djValid && \' \' || $ctrl.theValid.invalidText || \'incorrect\'}}</div>\n      '
     };
   }).directive(directiveNormalize('dj-form-default-tip-mini'), function () {
     return {
       restrict: 'A',
-      template: '\n        <div class="require">{{$ctrl.djRequire && \'*\' || \'\'}}</div>\n        <div class="prompt-text">{{$ctrl.configs.title}}</div>\n      '
+      template: '\n        <div class="require">{{$ctrl.theValid.djRequire && \'*\' || \'\'}}</div>\n        <div class="prompt-text">{{$ctrl.configs.title}}</div>\n      '
     };
   });
 }(window, angular);

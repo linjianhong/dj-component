@@ -1,6 +1,6 @@
 {
   "name": "dj-component",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "authors": [
     "linjianhong <linjianhong@github.com>"
   ],
@@ -8,6 +8,12 @@
   "main": [
     "dist/dj-component.js",
     "dist/dj-component.css"
+  ],
+  "ignore": [
+    ".*",
+    "package.json",
+    "demo",
+    "src"
   ],
   "styles": [
     "dist/dj-component.css"
