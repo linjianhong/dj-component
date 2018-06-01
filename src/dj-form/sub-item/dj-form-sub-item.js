@@ -522,7 +522,7 @@
         restrict: 'A',
         template: `
         <div class="flex title" dj-form-default-tip-mini></div>
-        <div class="prompt error">{{$ctrl.djValid && ' ' || $ctrl.invalidText || 'incorrect'}}</div>
+        <div class="prompt error">{{$ctrl.theValid.djValid && ' ' || $ctrl.theValid.invalidText || 'incorrect'}}</div>
       `
       }
     })
@@ -530,7 +530,7 @@
       return {
         restrict: 'A',
         template: `
-        <div class="require">{{$ctrl.djRequire && '*' || ''}}</div>
+        <div class="require">{{$ctrl.theValid.djRequire && '*' || ''}}</div>
         <div class="prompt-text">{{$ctrl.configs.title}}</div>
       `
       }

@@ -60,9 +60,25 @@
   function ctrlHostEdit($scope, $element, $timeout, $q, $compile, DjFormDefaultDefine) {
 
     /** 编译生成动态子表单项 */
-    function compileConfigs(configs) {
+    var compileConfigs=(configs)=> {
       if (!configs) {
         $element.html("");
+        return;
+      }
+      var componentName = configs.componentEdit || configs.component;
+      var css = configs.css.hostEdit || configs.css.host || 'normal';
+      if(componentName){
+        var template = `
+          <div class="${css} {{theValid.dirty&&'ng-dirty'||''}} {{!theValid.valid&&'ng-invalid'||''}}">
+            <div class="a flex prompt-top" dj-form-default-tip></div>
+            <${componentName}
+              configs="$ctrl.configs"
+              init-value="initValue"
+              on-change="onChange(value)"
+            ></${componentName}>
+          </div>`;
+        $element.html(template);
+        $compile($element.contents())($scope);
         return;
       }
       var eleType = DjFormDefaultDefine.getSafeType(configs.type);
@@ -70,14 +86,11 @@
       var css = configs.css.hostEdit || configs.css.host || 'normal';
       var template = `
         <${eleName}
-          class="${css} {{dirty&&'ng-dirty'||''}} {{!theValid.valid&&'ng-invalid'||''}}"
+          class="${css} {{theValid.dirty&&'ng-dirty'||''}} {{!theValid.valid&&'ng-invalid'||''}}"
           configs="$ctrl.configs"
           init-value="initValue"
           on-change="onChange(value)"
-          invalid-text="theValid.tip"
-          dj-require="theValid.require"
-          dj-valid="theValid.valid"
-          dj-dirty="theValid.dirty"
+          the-valid="theValid"
         ></${eleName}>
       `;
       $element.html(template);
@@ -89,7 +102,7 @@
     };
 
     /** 数据校验 */
-    var theValid = $scope.theValid = {
+    var theValid = $scope.theValid = this.theValid = {
       valid: true,
       require: false,
       tip: "", //错误提示
@@ -275,7 +288,7 @@
     }
 
     /** 编译生成动态子表单项 */
-    function compileConfigs(configs, value) {
+    var compileConfigs=(configs, value)=> {
       //console.log("HOST 编译 ", configs, value);
       if (!configs) {
         $timeout(hideHost);
@@ -291,6 +304,25 @@
           $timeout(hideHost);
           return;
         }
+      }
+
+      /** 自定义控件情况 */
+      var componentName = configs.componentShow || configs.component;
+      var css = configs.css.hostShow || configs.css.host || 'normal';
+      if(componentName){
+        var template = `
+          <div class="${css}">
+            <div flex-row="5em" class="{{configs.css.hostBodyShow}}">
+              <span class="a">{{configs.title}}</span>
+              <${componentName}
+                configs="$ctrl.configs"
+                init-value="initValue"
+              ></${componentName}>
+            </div>
+          </div>`;
+        $element.html(template);
+        $compile($element.contents())($scope);
+        return;
       }
 
       /** 开始编译子组件 */
