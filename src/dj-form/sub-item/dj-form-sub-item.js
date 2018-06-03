@@ -493,9 +493,7 @@
     theModule.component(directiveNormalize(`${DJ_FORM_DEFAULT.pre}${conponent.name}`), {
       bindings: {
         configs: '<',
-        djDirty: '<',
-        djValid: '<',
-        invalidText: '<',
+        theValid: '<',
         djRequire: '<',
         initValue: '<',
         onChange: '&'
@@ -521,18 +519,18 @@
       return {
         restrict: 'A',
         template: `
-        <div class="flex title" dj-form-default-tip-mini></div>
-        <div class="prompt error">{{$ctrl.theValid.djValid && ' ' || $ctrl.theValid.invalidText || 'incorrect'}}</div>
-      `
+          <div class="flex title" dj-form-default-tip-mini></div>
+          <div class="prompt error">{{$ctrl.theValid.valid && ' ' || $ctrl.theValid.tip || 'incorrect'}}</div>
+          `
       }
     })
     .directive(directiveNormalize('dj-form-default-tip-mini'), function () {
       return {
         restrict: 'A',
         template: `
-        <div class="require">{{$ctrl.theValid.djRequire && '*' || ''}}</div>
-        <div class="prompt-text">{{$ctrl.configs.title}}</div>
-      `
+          <div class="require">{{$ctrl.theValid.require && '*' || ''}}</div>
+          <div class="prompt-text">{{$ctrl.configs.title}}</div>
+        `
       }
     });
 
