@@ -1,10 +1,10 @@
-.left-swipe-delete-btn{
-  position:absolute;
+.left-swipe-delete-btn {
+  position: absolute;
   z-index: 1;
-  top:0;
-  right:0;
-  bottom:0;
-  width:100px;
-  background:#f00;
-  color:#fff;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  width: 100px;
+  background: #f00;
+  color: #fff;
 }

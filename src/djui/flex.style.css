@@ -1,7 +1,16 @@
 
 
 /* 弹性布局样式 */
-.flex, .flex-v, .flex-cc {
+
+.flex-left   , .flex-top     ,
+.flex-right  , .flex-bottom  ,
+.flex-center , .flex-v-center,
+.flex-between, .flex-stretch ,
+.flex-arround, .flex-baseline,
+.flex-wrap,
+
+.flex, .flex-v, .flex-cc
+{
   display: box;			  /* OLD - Android 4.4- */
   display: -webkit-box;	  /* OLD - iOS 6-, Safari 3.1-6 */
   display: -moz-box;		 /* OLD - Firefox 19- (buggy but mostly works) */
@@ -11,6 +20,15 @@
 }
 
 /* 父元素-横向排列（主轴） */
+
+
+.flex-left   , .flex-top     ,
+.flex-right  , .flex-bottom  ,
+.flex-center , .flex-v-center,
+.flex-between, .flex-stretch ,
+.flex-arround, .flex-baseline,
+.flex-wrap,
+
 .flex {
   /* 09版 */
   -webkit-box-orient: horizontal;
