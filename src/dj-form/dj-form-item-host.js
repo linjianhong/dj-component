@@ -70,10 +70,12 @@
       if(componentName){
         var template = `
           <div class="${css} {{theValid.dirty&&'ng-dirty'||''}} {{!theValid.valid&&'ng-invalid'||''}}">
-            <div class="a flex prompt-top" dj-form-default-tip></div>
-            <${componentName}
+            <div class="a flex prompt-top" dj-form-default-tip ng-hide="$ctrl.configs.hideTip"></div>
+            <${componentName} class="${configs.css.dataEdit||configs.css.data||'b flex-v-center'}"
+              mode="edit"
               configs="$ctrl.configs"
               init-value="initValue"
+              the-valid="theValid"
               on-change="onChange(value)"
             ></${componentName}>
           </div>`;
@@ -313,8 +315,9 @@
         var template = `
           <div class="${css}">
             <div flex-row="5em" class="{{configs.css.hostBodyShow}}">
-              <span class="a">{{configs.title}}</span>
-              <${componentName}
+              <span class="a" ng-hide="configs.hideTip">{{configs.title}}</span>
+              <${componentName} class="${configs.css.dataShow||configs.css.data||'flex-v-center'}"
+                mode="show"
                 configs="$ctrl.configs"
                 init-value="initValue"
               ></${componentName}>
