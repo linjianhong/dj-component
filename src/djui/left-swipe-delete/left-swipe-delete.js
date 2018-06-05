@@ -44,11 +44,11 @@ angular.module('ngTouch').directive("leftSwiptDelete", ['$parse', '$compile', '$
       // Therefore this delta must be positive, and larger than the minimum.
       if (!startCoords) return false;
       var deltaY = Math.abs(coords.y - startCoords.y);
-      var deltaX =  coords.x - startCoords.x;
+      var deltaX = coords.x - startCoords.x;
       var moved = opening ? (deltaX > MIN_HORIZONTAL_DISTANCE) : (-deltaX > MIN_HORIZONTAL_DISTANCE);
       return valid && // Short circuit for already-invalidated swipes.
         deltaY < MAX_VERTICAL_DISTANCE &&
-        deltaY /  Math.abs(deltaX) < MAX_VERTICAL_RATIO &&
+        deltaY / Math.abs(deltaX) < MAX_VERTICAL_RATIO &&
         moved;
     }
 
@@ -58,13 +58,19 @@ angular.module('ngTouch').directive("leftSwiptDelete", ['$parse', '$compile', '$
     }
     var theElement;
     setTimeout(() => {
-      theElement = showMoving.element = element.children().eq(0);
+      var theChildren = element.children();
+      theElement = showMoving.element = theChildren.eq(0);
       theElement.css({
         "position": 'relative',
         "z-index": "2"
       });
       bind(theElement);
-      initButton();
+      if (theChildren.length >= 2) {
+        theBtn = theChildren.eq(1);
+        theBtn.addClass("left-swipe-delete-btn");
+      } else {
+        initButton();
+      }
     });
     function bind(element) {
       $swipe.bind(element, {
@@ -82,11 +88,11 @@ angular.module('ngTouch').directive("leftSwiptDelete", ['$parse', '$compile', '$
           showMoving(0);
         },
         'end': function (coords, event) {
-          opening = validSwipe(coords)? !opening: opening;
+          opening = validSwipe(coords) ? !opening : opening;
           showMoving(opening ? "show" : "hide");
         }
       }, pointerTypes);
-      angular.element(element).on("click", ()=>{
+      angular.element(element).on("click", () => {
         showMoving("hide");
       });
     }
@@ -98,14 +104,14 @@ angular.module('ngTouch').directive("leftSwiptDelete", ['$parse', '$compile', '$
       element.append(theBtn);
       theBtn.bind("click", event => {
         var result = swipeHandler(scope, { $event: event });
-        if(result === false){
+        if (result === false) {
           showMoving("hide");
           return;
         }
-        $q.when(result).then(()=>{
+        $q.when(result).then(() => {
           showMoving(0);
           opening = false;
-        }).catch(()=>{
+        }).catch(() => {
           showMoving("hide");
         })
       })
@@ -118,13 +124,13 @@ angular.module('ngTouch').directive("leftSwiptDelete", ['$parse', '$compile', '$
         showMoving.element.css("display", 'block');
       }
       if (dx == "show") {
-        showMoving.element.css("transition-duration", "0.5s");
+        showMoving.element.css("transition-duration", "0.3s");
         showMoving.element.css("transform", 'translateX(-' + BUTTON_WIDTH + 'px)');
         autoclose();
         opening = true;
       }
       else if (dx == "hide") {
-        showMoving.element.css("transition-duration", "0.5s");
+        showMoving.element.css("transition-duration", "0.3s");
         showMoving.element.css("transform", 'translateX(0)');
         opening = false;
       }
