@@ -79,7 +79,7 @@ angular.module('dj-ui', ['ngAnimate']);
       var componentName = configs.componentEdit || configs.component;
       var css = configs.css.hostEdit || configs.css.host || 'normal';
       if (componentName) {
-        var template = '\n          <div class="' + css + ' {{theValid.dirty&&\'ng-dirty\'||\'\'}} {{!theValid.valid&&\'ng-invalid\'||\'\'}}">\n            <div class="a flex prompt-top" dj-form-default-tip></div>\n            <' + componentName + '\n              configs="$ctrl.configs"\n              init-value="initValue"\n              on-change="onChange(value)"\n            ></' + componentName + '>\n          </div>';
+        var template = '\n          <div class="' + css + ' {{theValid.dirty&&\'ng-dirty\'||\'\'}} {{!theValid.valid&&\'ng-invalid\'||\'\'}}">\n            <div class="a flex prompt-top" dj-form-default-tip ng-hide="$ctrl.configs.hideTip"></div>\n            <' + componentName + ' class="' + (configs.css.dataEdit || configs.css.data || 'b flex-v-center') + '"\n              mode="edit"\n              configs="$ctrl.configs"\n              init-value="initValue"\n              the-valid="theValid"\n              on-change="onChange(value)"\n            ></' + componentName + '>\n          </div>';
         $element.html(template);
         $compile($element.contents())($scope);
         return;
@@ -300,7 +300,7 @@ angular.module('dj-ui', ['ngAnimate']);
       var componentName = configs.componentShow || configs.component;
       var css = configs.css.hostShow || configs.css.host || 'normal';
       if (componentName) {
-        var template = '\n          <div class="' + css + '">\n            <div flex-row="5em" class="{{configs.css.hostBodyShow}}">\n              <span class="a">{{configs.title}}</span>\n              <' + componentName + '\n                configs="$ctrl.configs"\n                init-value="initValue"\n              ></' + componentName + '>\n            </div>\n          </div>';
+        var template = '\n          <div class="' + css + '">\n            <div flex-row="5em" class="{{configs.css.hostBodyShow}}">\n              <span class="a" ng-hide="configs.hideTip">{{configs.title}}</span>\n              <' + componentName + ' class="' + (configs.css.dataShow || configs.css.data || 'flex-v-center') + '"\n                mode="show"\n                configs="$ctrl.configs"\n                init-value="initValue"\n              ></' + componentName + '>\n            </div>\n          </div>';
         $element.html(template);
         $compile($element.contents())($scope);
         return;
@@ -771,7 +771,7 @@ angular.module('dj-form').filter('formFormat', function () {
         options = body;
         if (!options.param) options = { param: options };
       }
-      options.template = '<djui-dialog param="param"></djui-dialog>';
+      options.template = '<djui-dialog param="param">' + (options.template || '') + '</djui-dialog>';
       return showComponent(options).then(function (result) {
         if (!result || result.btnName != "OK") {
           return $q.reject(result);
@@ -786,7 +786,7 @@ angular.module('dj-form').filter('formFormat', function () {
         options = body;
         if (!options.param) options = { param: options };
       }
-      options.template = '<djui-dialog param="param"></djui-dialog>';
+      options.template = '<djui-dialog param="param">' + (options.template || '') + '</djui-dialog>';
       return showComponent(options).then(function (result) {
         if (!result || result.btnName != "OK") {
           return $q.reject(result);
@@ -1520,9 +1520,7 @@ angular.module('dj-form').filter('formFormat', function () {
     theModule.component(directiveNormalize('' + DJ_FORM_DEFAULT.pre + conponent.name), {
       bindings: {
         configs: '<',
-        djDirty: '<',
-        djValid: '<',
-        invalidText: '<',
+        theValid: '<',
         djRequire: '<',
         initValue: '<',
         onChange: '&'
@@ -1545,12 +1543,12 @@ angular.module('dj-form').filter('formFormat', function () {
   theModule.directive(directiveNormalize('dj-form-default-tip'), function () {
     return {
       restrict: 'A',
-      template: '\n        <div class="flex title" dj-form-default-tip-mini></div>\n        <div class="prompt error">{{$ctrl.theValid.djValid && \' \' || $ctrl.theValid.invalidText || \'incorrect\'}}</div>\n      '
+      template: '\n          <div class="flex title" dj-form-default-tip-mini></div>\n          <div class="prompt error">{{$ctrl.theValid.valid && \' \' || $ctrl.theValid.tip || \'incorrect\'}}</div>\n          '
     };
   }).directive(directiveNormalize('dj-form-default-tip-mini'), function () {
     return {
       restrict: 'A',
-      template: '\n        <div class="require">{{$ctrl.theValid.djRequire && \'*\' || \'\'}}</div>\n        <div class="prompt-text">{{$ctrl.configs.title}}</div>\n      '
+      template: '\n          <div class="require">{{$ctrl.theValid.require && \'*\' || \'\'}}</div>\n          <div class="prompt-text">{{$ctrl.configs.title}}</div>\n        '
     };
   });
 }(window, angular);
@@ -3207,13 +3205,19 @@ angular.module('ngTouch').directive("leftSwiptDelete", ['$parse', '$compile', '$
     }
     var theElement;
     setTimeout(function () {
-      theElement = showMoving.element = element.children().eq(0);
+      var theChildren = element.children();
+      theElement = showMoving.element = theChildren.eq(0);
       theElement.css({
         "position": 'relative',
         "z-index": "2"
       });
       bind(theElement);
-      initButton();
+      if (theChildren.length >= 2) {
+        theBtn = theChildren.eq(1);
+        theBtn.addClass("left-swipe-delete-btn");
+      } else {
+        initButton();
+      }
     });
     function bind(element) {
       $swipe.bind(element, {
@@ -3266,12 +3270,12 @@ angular.module('ngTouch').directive("leftSwiptDelete", ['$parse', '$compile', '$
         showMoving.element.css("display", 'block');
       }
       if (dx == "show") {
-        showMoving.element.css("transition-duration", "0.5s");
+        showMoving.element.css("transition-duration", "0.3s");
         showMoving.element.css("transform", 'translateX(-' + BUTTON_WIDTH + 'px)');
         autoclose();
         opening = true;
       } else if (dx == "hide") {
-        showMoving.element.css("transition-duration", "0.5s");
+        showMoving.element.css("transition-duration", "0.3s");
         showMoving.element.css("transform", 'translateX(0)');
         opening = false;
       } else {

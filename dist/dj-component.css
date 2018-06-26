@@ -211,7 +211,16 @@ djui-tags-show > * > .tag {
 
 
 /* 弹性布局样式 */
-.flex, .flex-v, .flex-cc {
+
+.flex-left   , .flex-top     ,
+.flex-right  , .flex-bottom  ,
+.flex-center , .flex-v-center,
+.flex-between, .flex-stretch ,
+.flex-arround, .flex-baseline,
+.flex-wrap,
+
+.flex, .flex-v, .flex-cc
+{
   display: box;			  /* OLD - Android 4.4- */
   display: -webkit-box;	  /* OLD - iOS 6-, Safari 3.1-6 */
   display: -moz-box;		 /* OLD - Firefox 19- (buggy but mostly works) */
@@ -221,6 +230,15 @@ djui-tags-show > * > .tag {
 }
 
 /* 父元素-横向排列（主轴） */
+
+
+.flex-left   , .flex-top     ,
+.flex-right  , .flex-bottom  ,
+.flex-center , .flex-v-center,
+.flex-between, .flex-stretch ,
+.flex-arround, .flex-baseline,
+.flex-wrap,
+
 .flex {
   /* 09版 */
   -webkit-box-orient: horizontal;
@@ -307,11 +325,12 @@ dj-form-item-host.empty {
 dj-form-item-host.mode-edit > * > .b {
   line-height: 2.2em;
   width: 100%;
-  height: 2.2em;
+  min-height: 2.2em;
   border: 1px solid #e6e6e6;
   border-radius: .3em;
   padding-left: 1em;
   -webkit-appearance: none;
+  appearance: none;
   outline: 0;
 }
 dj-form-default-item-textarea > textarea{
@@ -1009,13 +1028,13 @@ imgs-uploader > .box > .img img{
 
 
 
-.left-swipe-delete-btn{
-  position:absolute;
+.left-swipe-delete-btn {
+  position: absolute;
   z-index: 1;
-  top:0;
-  right:0;
-  bottom:0;
-  width:100px;
-  background:#f00;
-  color:#fff;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  width: 100px;
+  background: #f00;
+  color: #fff;
 }
