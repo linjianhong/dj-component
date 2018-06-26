@@ -192,7 +192,7 @@
         value: $scope.memValue,
         valid: $scope.valid,
         dirty: $scope.dirty,
-        item: item
+        item: angular.extend({}, item, {valid})
       });
     };
   }
