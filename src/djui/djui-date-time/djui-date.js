@@ -94,6 +94,9 @@
     return fmt;
   }
 
+  Date.prototype.timeFormat = function(format){
+    return timeFormat(this, format || "yyyy-MM-dd");
+  }
 
 })(window, angular);
 
