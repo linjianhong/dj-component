@@ -72,15 +72,17 @@
       element.append(dlg[0]);
       var scopeDjPop = dlg.children().scope();
       scopeDjPop.options = options;
-      var listener = scopeDjPop.$on("dj-pop-box-close", function (event, data) {
-        event.preventDefault();
-        closeDjg(data);
-      });
-      //显示时按浏览器的后退按钮：关闭对话框
-      var listener2 = scopeDjPop.$on("$locationChangeStart", function (event) {
-        event.preventDefault();
-        closeDjg("locationChange");
-      });
+      if (options.hookClose !== false) {
+        var listener = scopeDjPop.$on("dj-pop-box-close", function (event, data) {
+          event.preventDefault();
+          closeDjg(data);
+        });
+        //显示时按浏览器的后退按钮：关闭对话框
+        var listener2 = scopeDjPop.$on("$locationChangeStart", function (event) {
+          event.preventDefault();
+          closeDjg("locationChange");
+        });
+      }
       return waiteDialog.ready();
 
       function closeDjg(data) {
@@ -96,12 +98,12 @@
 
 
     /**
-    * 显示功能
-    * @param {string} component
-    * @param {object} options
-    * @param {function|false} options.beforeClose: 将要关闭，返回 false, 或 reject, 不可关闭
-    * @param {function|false} options.onClose: 关闭时回调
-    */
+     * 显示功能
+     * @param {string} component
+     * @param {object} options
+     * @param {function|false} options.beforeClose: 将要关闭，返回 false, 或 reject, 不可关闭
+     * @param {function|false} options.onClose: 关闭时回调
+     */
     function showComponent(options) {
       if (!options || !options.template) return $q.reject("无模板");
       var waiteDialog = new DjWaiteReady();
@@ -114,37 +116,20 @@
       angular.element(element).append(dlg);
       dlg.scope(scopeDjPop);
       $compile(dlg.contents())(scopeDjPop);
-      //var dlg = $compile(template)(scopeDjPop);
-      //angular.element(element).append(dlg[0]);
-      var listener = scopeDjPop.$on("dj-pop-box-close", function (event, data) {
-        event.preventDefault();
-        closeDjg({ btnName: data, param: scopeDjPop.param });
-      });
-      //显示时按浏览器的后退按钮：关闭对话框
-      var listener2 = scopeDjPop.$on("$locationChangeStart", function (event) {
-        event.preventDefault();
-        closeDjg("locationChange");
-      });
-      return waiteDialog.ready();
 
-      function closeDjg(data) {
-        setTimeout(() => {
-          scopeDjPop.$destroy();
-          dlg && dlg.remove();
-          dlg = null;
-        })
-        //console.log('对话框关闭', data);
-        waiteDialog.resolve(data);
-      }
+      if (options.hookClose !== false) listenCloseDlg(scopeDjPop, dlg, options, waiteDialog);
+      return waiteDialog.ready();
     }
     /**
-    * 显示功能
-    * @param {string} component
-    * @param {object} options
-    * @param {function|false} options.beforeClose: 将要关闭，返回 false, 或 reject, 不可关闭
-    * @param {function|false} options.onClose: 关闭时回调
-    */
+     * 显示功能
+     * @param {string} component
+     * @param {object} options
+     * @param {function|false} options.beforeClose: 将要关闭，返回 false, 或 reject, 不可关闭
+     * @param {function|false} options.onClose: 关闭时回调
+     */
     function showComponentAutoParams(componentName, params, options) {
+      // 默认标志弹出状态为真
+      params = angular.extend({ poping: 1 }, params);
       options = options || {};
       var waiteDialog = new DjWaiteReady();
       var element = options.element || document.body;
@@ -153,8 +138,13 @@
       var attr = [];
       for (var k in params) {
         if (params.hasOwnProperty(k)) {
-          attr.push(`${k.replace(/([A-Z])/g, "-$1").toLowerCase()}="${k}"`);
-          scopeDjPop[k] = params[k];
+          if (k == "class" || k == "style") {
+            attr.push(`class="${params[k]}"`);
+          }
+          else {
+            attr.push(`${k.replace(/([A-Z])/g, "-$1").toLowerCase()}="${k}"`);
+            scopeDjPop[k] = params[k];
+          }
         }
       }
       var template = `<${componentName} ${attr.join(' ')}></${componentName}>`;
@@ -162,27 +152,62 @@
       angular.element(element).append(dlg);
       dlg.scope(scopeDjPop);
       $compile(dlg.contents())(scopeDjPop);
-      //var dlg = $compile(template)(scopeDjPop);
-      //angular.element(element).append(dlg[0]);
+
+      /** 动画效果 */
+      if (options.animationShow) {
+        var animation = options.animationShow;
+        if (angular.isFunction(options.animation)) {
+          $q.when(animation({ element: dlg, scope: scopeDjPop })).then(animation => {
+            $animateCss(dlg, animation).start();
+          })
+        } else {
+          $animateCss(dlg, animation).start();
+        }
+      }
+
+      /** 关闭对话框功能 */
+      if (options.hookClose !== false) listenCloseDlg(scopeDjPop, dlg, options, waiteDialog);
+
+      /** 返回承诺 */
+      return waiteDialog.ready();
+    }
+
+
+    function listenCloseDlg(scopeDjPop, dlg, options, waiteDialog) {
       var listener = scopeDjPop.$on("dj-pop-box-close", function (event, data) {
         event.preventDefault();
-        closeDjg(data);
+        if(data.btnName){
+          closeDjg(data);
+        }
+        else{
+          closeDjg({ btnName: data, param: scopeDjPop.param });
+        }
       });
       //显示时按浏览器的后退按钮：关闭对话框
       var listener2 = scopeDjPop.$on("$locationChangeStart", function (event) {
         event.preventDefault();
         closeDjg("locationChange");
       });
-      return waiteDialog.ready();
-
       function closeDjg(data) {
         setTimeout(() => {
-          scopeDjPop.$destroy();
-          dlg && dlg.remove();
-          dlg = null;
+          /** 动画效果 */
+          if (options.animationHide) {
+            var animation = options.animationHide;
+            if (angular.isFunction(options.animation)) animation = animation({ element: dlg, scope: scopeDjPop });
+            $animateCss(dlg, animation).start().finally(() => {
+              scopeDjPop.$destroy();
+              dlg && dlg.remove();
+              dlg = null;
+            });
+          }
+          else {
+            scopeDjPop.$destroy();
+            dlg && dlg.remove();
+            dlg = null;
+            //console.log('对话框关闭', data);
+          }
+          waiteDialog.resolve(data);
         })
-        //console.log('对话框关闭', data);
-        waiteDialog.resolve(data);
       }
     }
 
@@ -193,11 +218,12 @@
 
 
     function dialog(componentName, params, options) {
-      return showComponentAutoParams(componentName, params, options).then(btnName => {
+      return showComponentAutoParams(componentName, params, options).then(result => {
+        var btnName = result && result.btnName || result;
         if (btnName != "OK") {
           return $q.reject(btnName)
         }
-        return btnName;
+        return result;
       });
     }
 
@@ -214,6 +240,7 @@
         text = text.text;
       }
       options.template = `<dj-toast text="${text}" delay="${delay}"></dj-toast>`;
+      options.hookClose = false;
       return showComponent(options);
     }
 
@@ -223,7 +250,7 @@
         options = body;
         if (!options.param) options = { param: options };
       }
-      options.template = `<djui-dialog param="param">${options.template||''}</djui-dialog>`;
+      options.template = `<djui-dialog param="param">${options.template || ''}</djui-dialog>`;
       return showComponent(options).then(result => {
         if (!result || result.btnName != "OK") {
           return $q.reject(result)
@@ -238,7 +265,7 @@
         options = body;
         if (!options.param) options = { param: options };
       }
-      options.template = `<djui-dialog param="param">${options.template||''}</djui-dialog>`;
+      options.template = `<djui-dialog param="param">${options.template || ''}</djui-dialog>`;
       return showComponent(options).then(result => {
         if (!result || result.btnName != "OK") {
           return $q.reject(result)
@@ -247,13 +274,13 @@
       });
     }
 
-    function input(title, text) {
-      var options = { param: { title, text } };
+    function input(title, text, placeholder) {
+      var options = { param: { title, text, placeholder } };
       if (angular.isObject(title)) {
         options = title;
         if (!options.param) options = { param: options };
       }
-      options.template = `<djui-dialog param="param"><djui-dialog-body><textarea class="djui-dialog-input" ng-model="param.text"></textarea></djui-dialog-body></djui-dialog>`;
+      options.template = `<djui-dialog param="param"><djui-dialog-body><textarea class="djui-dialog-input" ng-model="param.text" placeholder="${options.param.placeholder || ''}"></textarea></djui-dialog-body></djui-dialog>`;
       return showComponent(options).then(result => {
         if (!result || !result.param || result.btnName != "OK") {
           return $q.reject(result)
