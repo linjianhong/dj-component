@@ -18,7 +18,10 @@
   function initDropdownList(param, $http, $q) {
     //console.log('获取下拉列表, param =', param);
     if (!param || !param.list) return $q.when([]);
-    if (angular.isString(param.list)) {
+    if (angular.isFunction(param.list)) {
+      return $q.when(param.list());
+    }
+    if (angular.isString(param.list) || angular.isString(param.list.name)) {
       return $http.post('获取下拉列表', param.list).then(json => {
         //console.log('获取下拉列表, json =', json);
         return $q.when(json.list || json.datas.list);
@@ -26,9 +29,6 @@
         //console.log('获取下拉列表, 失败: ', e);
         return $q.reject([]);
       })
-    }
-    if (angular.isFunction(param.list)) {
-      return $q.when(param.list());
     }
     return $q.when(param.list);
   }
@@ -309,7 +309,7 @@
         <div class="placeholder">{{$ctrl.configs.param.placeholder||''}}</div>
         <select class="b item-body {{!value&&'empty'}}" ng-model="value" ng-change="$ctrl.onChange({value:value})">
           <option value=""></option>
-          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>
+          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item.value||item}}</option>
         </select>
       </div>
       `,
@@ -321,7 +321,7 @@
       <div class="b inputs">
         <select class="item-body" ng-model="value" ng-change="$ctrl.onChange({value:value})">
           <option value=""></option>
-          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>
+          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item.value||item}}</option>
         </select>
         <div class="caret-down flex flex-v-center"><div></div></div>
         <djui-input class="flex"
