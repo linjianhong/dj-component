@@ -91,7 +91,7 @@ angular.module('dj-ui', ['ngAnimate']);
       $element.html(template);
       var childElement = $compile($element.contents())($scope);
       var childScope = $scope.$$childHead;
-      var childTemplate = configs.template || DjFormDefaultDefine.getTemplateEdit(eleType);
+      var childTemplate = configs.templateEdit || configs.template || DjFormDefaultDefine.getTemplateEdit(eleType);
       childElement.html(childTemplate);
       $compile(childElement.contents())(childScope);
     };
@@ -314,7 +314,7 @@ angular.module('dj-ui', ['ngAnimate']);
       $element.html(template);
       var childElement = $compile($element.contents())($scope);
       var childScope = $scope.$$childHead;
-      var childTemplate = configs.template || DjFormDefaultDefine.getTemplateShow(eleType);
+      var childTemplate = configs.templateShow || configs.template || DjFormDefaultDefine.getTemplateShow(eleType);
       childElement.html(childTemplate);
       $compile(childElement.contents())(childScope);
     };
@@ -515,7 +515,7 @@ angular.module('dj-form').filter('formFormat', function () {
         value: $scope.memValue,
         valid: $scope.valid,
         dirty: $scope.dirty,
-        item: item
+        item: angular.extend({}, item, { valid: valid })
       });
     };
   }
@@ -624,15 +624,17 @@ angular.module('dj-form').filter('formFormat', function () {
       element.append(dlg[0]);
       var scopeDjPop = dlg.children().scope();
       scopeDjPop.options = options;
-      var listener = scopeDjPop.$on("dj-pop-box-close", function (event, data) {
-        event.preventDefault();
-        closeDjg(data);
-      });
-      //显示时按浏览器的后退按钮：关闭对话框
-      var listener2 = scopeDjPop.$on("$locationChangeStart", function (event) {
-        event.preventDefault();
-        closeDjg("locationChange");
-      });
+      if (options.hookClose !== false) {
+        var listener = scopeDjPop.$on("dj-pop-box-close", function (event, data) {
+          event.preventDefault();
+          closeDjg(data);
+        });
+        //显示时按浏览器的后退按钮：关闭对话框
+        var listener2 = scopeDjPop.$on("$locationChangeStart", function (event) {
+          event.preventDefault();
+          closeDjg("locationChange");
+        });
+      }
       return waiteDialog.ready();
 
       function closeDjg(data) {
@@ -647,12 +649,12 @@ angular.module('dj-form').filter('formFormat', function () {
     }
 
     /**
-    * 显示功能
-    * @param {string} component
-    * @param {object} options
-    * @param {function|false} options.beforeClose: 将要关闭，返回 false, 或 reject, 不可关闭
-    * @param {function|false} options.onClose: 关闭时回调
-    */
+     * 显示功能
+     * @param {string} component
+     * @param {object} options
+     * @param {function|false} options.beforeClose: 将要关闭，返回 false, 或 reject, 不可关闭
+     * @param {function|false} options.onClose: 关闭时回调
+     */
     function showComponent(options) {
       if (!options || !options.template) return $q.reject("无模板");
       var waiteDialog = new DjWaiteReady();
@@ -665,37 +667,20 @@ angular.module('dj-form').filter('formFormat', function () {
       angular.element(element).append(dlg);
       dlg.scope(scopeDjPop);
       $compile(dlg.contents())(scopeDjPop);
-      //var dlg = $compile(template)(scopeDjPop);
-      //angular.element(element).append(dlg[0]);
-      var listener = scopeDjPop.$on("dj-pop-box-close", function (event, data) {
-        event.preventDefault();
-        closeDjg({ btnName: data, param: scopeDjPop.param });
-      });
-      //显示时按浏览器的后退按钮：关闭对话框
-      var listener2 = scopeDjPop.$on("$locationChangeStart", function (event) {
-        event.preventDefault();
-        closeDjg("locationChange");
-      });
-      return waiteDialog.ready();
 
-      function closeDjg(data) {
-        setTimeout(function () {
-          scopeDjPop.$destroy();
-          dlg && dlg.remove();
-          dlg = null;
-        });
-        //console.log('对话框关闭', data);
-        waiteDialog.resolve(data);
-      }
+      if (options.hookClose !== false) listenCloseDlg(scopeDjPop, dlg, options, waiteDialog);
+      return waiteDialog.ready();
     }
     /**
-    * 显示功能
-    * @param {string} component
-    * @param {object} options
-    * @param {function|false} options.beforeClose: 将要关闭，返回 false, 或 reject, 不可关闭
-    * @param {function|false} options.onClose: 关闭时回调
-    */
+     * 显示功能
+     * @param {string} component
+     * @param {object} options
+     * @param {function|false} options.beforeClose: 将要关闭，返回 false, 或 reject, 不可关闭
+     * @param {function|false} options.onClose: 关闭时回调
+     */
     function showComponentAutoParams(componentName, params, options) {
+      // 默认标志弹出状态为真
+      params = angular.extend({ poping: 1 }, params);
       options = options || {};
       var waiteDialog = new DjWaiteReady();
       var element = options.element || document.body;
@@ -704,8 +689,12 @@ angular.module('dj-form').filter('formFormat', function () {
       var attr = [];
       for (var k in params) {
         if (params.hasOwnProperty(k)) {
-          attr.push(k.replace(/([A-Z])/g, "-$1").toLowerCase() + '="' + k + '"');
-          scopeDjPop[k] = params[k];
+          if (k == "class" || k == "style") {
+            attr.push('class="' + params[k] + '"');
+          } else {
+            attr.push(k.replace(/([A-Z])/g, "-$1").toLowerCase() + '="' + k + '"');
+            scopeDjPop[k] = params[k];
+          }
         }
       }
       var template = '<' + componentName + ' ' + attr.join(' ') + '></' + componentName + '>';
@@ -713,27 +702,59 @@ angular.module('dj-form').filter('formFormat', function () {
       angular.element(element).append(dlg);
       dlg.scope(scopeDjPop);
       $compile(dlg.contents())(scopeDjPop);
-      //var dlg = $compile(template)(scopeDjPop);
-      //angular.element(element).append(dlg[0]);
+
+      /** 动画效果 */
+      if (options.animationShow) {
+        var animation = options.animationShow;
+        if (angular.isFunction(options.animation)) {
+          $q.when(animation({ element: dlg, scope: scopeDjPop })).then(function (animation) {
+            $animateCss(dlg, animation).start();
+          });
+        } else {
+          $animateCss(dlg, animation).start();
+        }
+      }
+
+      /** 关闭对话框功能 */
+      if (options.hookClose !== false) listenCloseDlg(scopeDjPop, dlg, options, waiteDialog);
+
+      /** 返回承诺 */
+      return waiteDialog.ready();
+    }
+
+    function listenCloseDlg(scopeDjPop, dlg, options, waiteDialog) {
       var listener = scopeDjPop.$on("dj-pop-box-close", function (event, data) {
         event.preventDefault();
-        closeDjg(data);
+        if (data.btnName) {
+          closeDjg(data);
+        } else {
+          closeDjg({ btnName: data, param: scopeDjPop.param });
+        }
       });
       //显示时按浏览器的后退按钮：关闭对话框
       var listener2 = scopeDjPop.$on("$locationChangeStart", function (event) {
         event.preventDefault();
         closeDjg("locationChange");
       });
-      return waiteDialog.ready();
-
       function closeDjg(data) {
         setTimeout(function () {
-          scopeDjPop.$destroy();
-          dlg && dlg.remove();
-          dlg = null;
+          /** 动画效果 */
+          if (options.animationHide) {
+            var animation = options.animationHide;
+            if (angular.isFunction(options.animation)) animation = animation({ element: dlg, scope: scopeDjPop });
+            $animateCss(dlg, animation).start().finally(function () {
+              scopeDjPop.$destroy();
+              dlg && dlg.remove();
+              dlg = null;
+            });
+          } else {
+            scopeDjPop.$destroy();
+            dlg && dlg.remove();
+            dlg = null;
+            //console.log('对话框关闭', data);
+          }
+          waiteDialog.resolve(data);
         });
-        //console.log('对话框关闭', data);
-        waiteDialog.resolve(data);
       }
     }
 
@@ -742,11 +763,12 @@ angular.module('dj-form').filter('formFormat', function () {
     }
 
     function dialog(componentName, params, options) {
-      return showComponentAutoParams(componentName, params, options).then(function (btnName) {
+      return showComponentAutoParams(componentName, params, options).then(function (result) {
+        var btnName = result && result.btnName || result;
         if (btnName != "OK") {
           return $q.reject(btnName);
         }
-        return btnName;
+        return result;
       });
     }
 
@@ -762,6 +784,7 @@ angular.module('dj-form').filter('formFormat', function () {
         text = text.text;
       }
       options.template = '<dj-toast text="' + text + '" delay="' + delay + '"></dj-toast>';
+      options.hookClose = false;
       return showComponent(options);
     }
 
@@ -795,13 +818,13 @@ angular.module('dj-form').filter('formFormat', function () {
       });
     }
 
-    function input(title, text) {
-      var options = { param: { title: title, text: text } };
+    function input(title, text, placeholder) {
+      var options = { param: { title: title, text: text, placeholder: placeholder } };
       if (angular.isObject(title)) {
         options = title;
         if (!options.param) options = { param: options };
       }
-      options.template = '<djui-dialog param="param"><djui-dialog-body><textarea class="djui-dialog-input" ng-model="param.text"></textarea></djui-dialog-body></djui-dialog>';
+      options.template = '<djui-dialog param="param"><djui-dialog-body><textarea class="djui-dialog-input" ng-model="param.text" placeholder="' + (options.param.placeholder || '') + '"></textarea></djui-dialog-body></djui-dialog>';
       return showComponent(options).then(function (result) {
         if (!result || !result.param || result.btnName != "OK") {
           return $q.reject(result);
@@ -1049,7 +1072,7 @@ angular.module('dj-form').filter('formFormat', function () {
     bindings: {
       list: '<'
     },
-    template: '\n        <div class="flex flex-left flex-wrap">\n          <div class="tag flex-cc" ng-repeat="item in list">{{item}}</div>\n        </div>\n        ',
+    template: '\n        <div class="flex flex-left flex-wrap">\n          <div class="tag flex-cc" ng-repeat="item in list">{{item.title||item}}</div>\n        </div>\n        ',
     controller: ["$scope", "$element", function ctrl($scope, $element) {
       this.$onChanges = function (changes) {
         if (changes.list) {
@@ -1157,7 +1180,10 @@ angular.module('dj-form').filter('formFormat', function () {
   function initDropdownList(param, $http, $q) {
     //console.log('获取下拉列表, param =', param);
     if (!param || !param.list) return $q.when([]);
-    if (angular.isString(param.list)) {
+    if (angular.isFunction(param.list)) {
+      return $q.when(param.list());
+    }
+    if (angular.isString(param.list) || angular.isString(param.list.name)) {
       return $http.post('获取下拉列表', param.list).then(function (json) {
         //console.log('获取下拉列表, json =', json);
         return $q.when(json.list || json.datas.list);
@@ -1165,9 +1191,6 @@ angular.module('dj-form').filter('formFormat', function () {
         //console.log('获取下拉列表, 失败: ', e);
         return $q.reject([]);
       });
-    }
-    if (angular.isFunction(param.list)) {
-      return $q.when(param.list());
     }
     return $q.when(param.list);
   }
@@ -1408,10 +1431,10 @@ angular.module('dj-form').filter('formFormat', function () {
     "textarea": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <textarea class="b"\n        ng-model="value"\n        ng-change="change(value)"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n      ></textarea>',
 
     /** 下拉框 */
-    "dropdown": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <div class="b inputs flex flex-v-center">\n        <div class="placeholder">{{$ctrl.configs.param.placeholder||\'\'}}</div>\n        <select class="b item-body {{!value&&\'empty\'}}" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n          <option value=""></option>\n          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>\n        </select>\n      </div>\n      ',
+    "dropdown": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <div class="b inputs flex flex-v-center">\n        <div class="placeholder">{{$ctrl.configs.param.placeholder||\'\'}}</div>\n        <select class="b item-body {{!value&&\'empty\'}}" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n          <option value=""></option>\n          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item.value||item}}</option>\n        </select>\n      </div>\n      ',
 
     /** 下拉编辑框 */
-    "combobox": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <div class="b inputs">\n        <select class="item-body" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n          <option value=""></option>\n          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item}}</option>\n        </select>\n        <div class="caret-down flex flex-v-center"><div></div></div>\n        <djui-input class="flex"\n          param="$ctrl.configs.param"\n          placeholder="{{$ctrl.configs.param.placeholder}}"\n          init-value="$ctrl.initValue"\n          on-change="$ctrl.onChange({value: value})"\n        ></djui-input>\n      </div>\n      ',
+    "combobox": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <div class="b inputs">\n        <select class="item-body" ng-model="value" ng-change="$ctrl.onChange({value:value})">\n          <option value=""></option>\n          <option ng-repeat="item in list track by $index" value="{{item.value||item}}">{{item.title||item.value||item}}</option>\n        </select>\n        <div class="caret-down flex flex-v-center"><div></div></div>\n        <djui-input class="flex"\n          param="$ctrl.configs.param"\n          placeholder="{{$ctrl.configs.param.placeholder}}"\n          init-value="$ctrl.initValue"\n          on-change="$ctrl.onChange({value: value})"\n        ></djui-input>\n      </div>\n      ',
 
     /** 多标签选择 */
     "tags": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <djui-tags class="item-body"\n        list="list"\n        init-value="value"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-tags>\n      ',
@@ -2375,6 +2398,10 @@ angular.module('dj-form').filter('formFormat', function () {
     }
     return fmt;
   }
+
+  Date.prototype.timeFormat = function (format) {
+    return timeFormat(this, format || "yyyy-MM-dd");
+  };
 }(window, angular);
 
 /**
@@ -2406,7 +2433,7 @@ angular.module('dj-form').filter('formFormat', function () {
       'body': '?djuiDialogBody',
       'footer': '?djuiDialogFooter'
     },
-    template: '\n      <div class="djui-dialog flex-cc">\n        <div class="back" ng-click="clickBack()"></div>\n        <div class="box">\n          <div class="title" ng-transclude="title">\n            <div class="text">\n              {{param.title}}\n            </div>\n          </div>\n          <div class="body" ng-transclude="body">\n            <div class="content">{{param.body}}</div>\n          </div>\n          <div class="footer" ng-transclude="footer">\n            <div class="thin-btns flex flex-arround">\n              <div class="thin-btn {{param.cancel.css||\'default\'}}" ng-if="!param.cancel.hide" ng-click="cancel()">{{param.cancel.text||\'\u53D6\u6D88\'}}</div>\n              <div class="thin-btn {{param.OK.css||\'primary\'}}" ng-if="!param.OK.hide" ng-click="OK()">{{param.OK.text||\'\u786E\u5B9A\'}}</div>\n            </div>\n          </div>\n        </div>\n      </div>\n    ',
+    template: '\n      <div class="djui-dialog flex-cc">\n        <div class="back" ng-click="clickBack()"></div>\n        <div class="box">\n          <div class="title" ng-transclude="title" ng-if="!param.hideHeader">\n            <div class="text">\n              {{param.title}}\n            </div>\n          </div>\n          <div class="body" ng-transclude="body">\n            <div class="content">{{param.body}}</div>\n          </div>\n          <div class="footer" ng-transclude="footer" ng-if="!param.hideFooter">\n            <div class="thin-btns flex flex-arround">\n              <div class="thin-btn {{param.cancel.css||\'default\'}}" ng-if="!param.cancel.hide" ng-click="cancel()">{{param.cancel.text||\'\u53D6\u6D88\'}}</div>\n              <div class="thin-btn {{param.OK.css||\'primary\'}}" ng-if="!param.OK.hide" ng-click="OK()">{{param.OK.text||\'\u786E\u5B9A\'}}</div>\n            </div>\n          </div>\n        </div>\n      </div>\n    ',
     controller: ["$scope", "$element", "$q", "$animateCss", function ($scope, $element, $q, $animateCss) {
       $scope.param = {};
       this.$onChanges = function (changes) {
@@ -3011,19 +3038,20 @@ angular.module('dj-form').filter('formFormat', function () {
       }
     };
   }).component('imgsUploader', {
-    template: '\n        <div class="box flex flex-left flex-wrap">\n          <div class="img preview" ng-click="clickImg($index)" ng-repeat=\'img in imgList track by $index\'>\n            <img ng-src="{{img|preview}}" />\n          </div>\n          <div class="img uploading" ng-repeat=\'file in File.uploadingFiles track by $index\'>\n            <div class="per">{{file.error||(file.per+\'%\')}}</div>\n          </div>\n          <div class="img add" ng-if="mode!=\'show\' && imgList.length < (maxCount||9)">\n            <input type="file" multiple accept="image/*,video/mp4" multi-file-upload change="File.onFile($files)">\n          </div>\n        </div>\n      ',
+    template: '\n        <div class="box flex flex-left flex-wrap">\n          <div class="img preview" ng-click="clickImg($index)" ng-repeat=\'img in imgList track by $index\'>\n            <img ng-src="{{img|preview}}" />\n          </div>\n          <div class="img uploading" ng-repeat=\'file in File.uploadingFiles track by $index\'>\n            <img ng-src="{{file}}"/>\n            <div class="per">{{file.error||(file.per+\'%\')}}</div>\n          </div>\n          <div class="img add" ng-if="mode!=\'show\' && imgList.length < (maxCount||9)" ng-click="addClick()">\n          </div>\n          <input type="file" multiple accept="image/*,video/mp4" multi-file-upload change="File.onFile($files)">\n        </div>',
     bindings: {
       appData: "<",
       maxCount: "<",
       imgs: "<",
       mode: '@',
+      preview: '@',
       onChange: "&",
       updateImg: "&" //选择图片更新用的回调函数
     },
-    controller: ["$scope", "$http", "IMG", "DjPop", ctrl]
+    controller: ["$scope", "$http", "$element", "IMG", "DjPop", ctrl]
   });
 
-  function ctrl($scope, $http, IMG, DjPop) {
+  function ctrl($scope, $http, $element, IMG, DjPop) {
     var _this16 = this;
 
     var imgData = this.imgData = { uploadings: [] };
@@ -3055,6 +3083,7 @@ angular.module('dj-form').filter('formFormat', function () {
       });
     };
     $scope.clickImg = function (n) {
+      if (_this16.preview === 'no') return;
       //DjPop.show("show-gallery", {imgs: this.imgs, remove: this.deleteImg})
       DjPop.gallery({
         imgs: $scope.imgList,
@@ -3073,6 +3102,29 @@ angular.module('dj-form').filter('formFormat', function () {
       var imgs = angular.merge([], $scope.imgList);
       _this16.updateImg({ imgs: imgs, value: imgs });
       _this16.onChange({ imgs: imgs, value: imgs });
+    };
+
+    $scope.addClick = function () {
+      $http.post("http-hook", "请求图片已上传地址").then(function (hook) {
+        return $http.post("请求图片已上传地址").then(function (json) {
+          if (json.datas && json.datas.url) {
+            self.addImg(json.datas.url);
+          }
+        });
+      }).catch(function (e) {
+        return $http.post("http-hook", "请求图片本地文件名").then(function (hook) {
+          return $http.post("请求图片本地文件名").then(function (json) {
+            var url = json.datas && json.datas.localUrl || json.datas.url;
+            if (url) {
+              File.uploadingFiles.push(url);
+              File.upload();
+            }
+          });
+        }).catch(function (e) {
+          var fileBox = $element[0].querySelector("input[type='file']");
+          fileBox.click();
+        });
+      });
     };
 
     /**
@@ -3271,16 +3323,22 @@ angular.module('ngTouch').directive("leftSwiptDelete", ['$parse', '$compile', '$
       }
       if (dx == "show") {
         showMoving.element.css("transition-duration", "0.3s");
+        showMoving.element.css("-webkit-transition-duration", "0.3s");
         showMoving.element.css("transform", 'translateX(-' + BUTTON_WIDTH + 'px)');
+        showMoving.element.css("-webkit-transform", 'translateX(-' + BUTTON_WIDTH + 'px)');
         autoclose();
         opening = true;
       } else if (dx == "hide") {
         showMoving.element.css("transition-duration", "0.3s");
+        showMoving.element.css("-webkit-transition-duration", "0.3s");
         showMoving.element.css("transform", 'translateX(0)');
+        showMoving.element.css("-webkit-transform", 'translateX(0)');
         opening = false;
       } else {
         showMoving.element.css("transition-duration", "0s");
+        showMoving.element.css("-webkit-transition-duration", "0s");
         showMoving.element.css("transform", 'translateX(' + dx + 'px)');
+        showMoving.element.css("-webkit-transform", 'translateX(' + dx + 'px)');
       }
     };
 
@@ -3302,6 +3360,12 @@ angular.module('ngTouch').directive("leftSwiptDelete", ['$parse', '$compile', '$
       };
       document.addEventListener("mousedown", close, false);
       document.addEventListener("touchstart", close, false);
+      var unbindHandler = scope.$on("left-swipe-delete-close", function () {
+        unbindHandler();
+        document.removeEventListener("mousedown", close, false);
+        document.removeEventListener("touchstart", close, false);
+        showMoving("hide");
+      });
     }
   };
 }]);

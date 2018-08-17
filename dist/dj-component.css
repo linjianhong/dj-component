@@ -98,8 +98,8 @@ input, select {
   color: #ffffff;
 }
 .djui-btn.disabled {
-  background: #f8f8f8;
-  color: #cccccc;
+  background: #cccccc;
+  color: #ffffff;
 }
 
 /* 瘦按钮 */
@@ -971,14 +971,10 @@ imgs-uploader > .box > .img.add:after{
   height: 60%;
 }
 
-imgs-uploader > .box > .img input[type='file']{
-  position: absolute;
-  z-index: 1;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
+imgs-uploader > .box > input[type='file']{
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 imgs-uploader > .box > .img img{
