@@ -64,7 +64,7 @@
     },
     template: `
         <div class="flex flex-left flex-wrap">
-          <div class="tag flex-cc" ng-repeat="item in list">{{item}}</div>
+          <div class="tag flex-cc" ng-repeat="item in list">{{item.title||item}}</div>
         </div>
         `,
     controller: ["$scope", "$element", function ctrl($scope, $element) {

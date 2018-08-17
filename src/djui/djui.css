@@ -52,8 +52,8 @@ input, select {
   color: #ffffff;
 }
 .djui-btn.disabled {
-  background: #f8f8f8;
-  color: #cccccc;
+  background: #cccccc;
+  color: #ffffff;
 }
 
 /* 瘦按钮 */
