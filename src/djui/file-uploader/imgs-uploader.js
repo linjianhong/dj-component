@@ -26,25 +26,26 @@
             <img ng-src="{{img|preview}}" />
           </div>
           <div class="img uploading" ng-repeat='file in File.uploadingFiles track by $index'>
+            <img ng-src="{{file}}"/>
             <div class="per">{{file.error||(file.per+'%')}}</div>
           </div>
-          <div class="img add" ng-if="mode!='show' && imgList.length < (maxCount||9)">
-            <input type="file" multiple accept="image/*,video/mp4" multi-file-upload change="File.onFile($files)">
+          <div class="img add" ng-if="mode!='show' && imgList.length < (maxCount||9)" ng-click="addClick()">
           </div>
-        </div>
-      `,
+          <input type="file" multiple accept="image/*,video/mp4" multi-file-upload change="File.onFile($files)">
+        </div>`,
       bindings: {
         appData: "<",
         maxCount: "<",
         imgs: "<",
         mode: '@',
+        preview: '@',
         onChange: "&",
         updateImg: "&" //选择图片更新用的回调函数
       },
-      controller: ["$scope", "$http", "IMG", "DjPop", ctrl]
+      controller: ["$scope", "$http", "$element", "IMG", "DjPop", ctrl]
     });
 
-  function ctrl($scope, $http, IMG, DjPop) {
+  function ctrl($scope, $http, $element, IMG, DjPop) {
     var imgData = this.imgData = { uploadings: [] };
     $scope.imgList = [];
     this.countError = 0;
@@ -67,7 +68,7 @@
       return DjPop.confirm("您确认要删除当前图片?").then(a => {
         imgs.splice(n, 1);
         $scope.imgList = angular.merge([], imgs);
-      }).then(()=>{
+      }).then(() => {
         //console.log("删除图片", $scope.imgList);
         var imgs = angular.merge([], $scope.imgList);
         this.updateImg({ imgs, value: imgs });
@@ -75,6 +76,7 @@
       })
     }
     $scope.clickImg = (n) => {
+      if (this.preview === 'no') return;
       //DjPop.show("show-gallery", {imgs: this.imgs, remove: this.deleteImg})
       DjPop.gallery({
         imgs: $scope.imgList,
@@ -96,6 +98,28 @@
     };
 
 
+    $scope.addClick = function () {
+      $http.post("http-hook", "请求图片已上传地址").then(hook => {
+        return $http.post("请求图片已上传地址").then(json => {
+          if (json.datas && json.datas.url) {
+            self.addImg(json.datas.url);
+          }
+        });
+      }).catch(e => {
+        return $http.post("http-hook", "请求图片本地文件名").then(hook => {
+          return $http.post("请求图片本地文件名").then(json => {
+            var url = json.datas && json.datas.localUrl || json.datas.url;
+            if (url) {
+              File.uploadingFiles.push(url);
+              File.upload();
+            }
+          });
+        }).catch(e => {
+          var fileBox = $element[0].querySelector("input[type='file']");
+          fileBox.click();
+        })
+      });
+    }
 
     /**
      * 上传模块
