@@ -125,18 +125,24 @@ angular.module('ngTouch').directive("leftSwiptDelete", ['$parse', '$compile', '$
       }
       if (dx == "show") {
         showMoving.element.css("transition-duration", "0.3s");
+        showMoving.element.css("-webkit-transition-duration", "0.3s");
         showMoving.element.css("transform", 'translateX(-' + BUTTON_WIDTH + 'px)');
+        showMoving.element.css("-webkit-transform", 'translateX(-' + BUTTON_WIDTH + 'px)');
         autoclose();
         opening = true;
       }
       else if (dx == "hide") {
         showMoving.element.css("transition-duration", "0.3s");
+        showMoving.element.css("-webkit-transition-duration", "0.3s");
         showMoving.element.css("transform", 'translateX(0)');
+        showMoving.element.css("-webkit-transform", 'translateX(0)');
         opening = false;
       }
       else {
         showMoving.element.css("transition-duration", "0s");
+        showMoving.element.css("-webkit-transition-duration", "0s");
         showMoving.element.css("transform", 'translateX(' + dx + 'px)');
+        showMoving.element.css("-webkit-transform", 'translateX(' + dx + 'px)');
       }
     }
 
@@ -160,6 +166,12 @@ angular.module('ngTouch').directive("leftSwiptDelete", ['$parse', '$compile', '$
       }
       document.addEventListener("mousedown", close, false);
       document.addEventListener("touchstart", close, false);
+      var unbindHandler = scope.$on("left-swipe-delete-close", () => {
+        unbindHandler();
+        document.removeEventListener("mousedown", close, false);
+        document.removeEventListener("touchstart", close, false);
+        showMoving("hide")
+      });
     }
   };
 }]);
