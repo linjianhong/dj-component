@@ -98,7 +98,7 @@
       $element.html(template);
       var childElement = $compile($element.contents())($scope);
       var childScope = $scope.$$childHead;
-      var childTemplate = configs.template || DjFormDefaultDefine.getTemplateEdit(eleType);
+      var childTemplate = configs.templateEdit || configs.template || DjFormDefaultDefine.getTemplateEdit(eleType);
       childElement.html(childTemplate);
       $compile(childElement.contents())(childScope);
     };
@@ -342,7 +342,7 @@
       $element.html(template);
       var childElement = $compile($element.contents())($scope);
       var childScope = $scope.$$childHead;
-      var childTemplate = configs.template || DjFormDefaultDefine.getTemplateShow(eleType);
+      var childTemplate = configs.templateShow || configs.template || DjFormDefaultDefine.getTemplateShow(eleType);
       childElement.html(childTemplate);
       $compile(childElement.contents())(childScope);
     };
