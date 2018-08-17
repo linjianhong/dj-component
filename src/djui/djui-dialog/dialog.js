@@ -31,7 +31,7 @@
       <div class="djui-dialog flex-cc">
         <div class="back" ng-click="clickBack()"></div>
         <div class="box">
-          <div class="title" ng-transclude="title">
+          <div class="title" ng-transclude="title" ng-if="!param.hideHeader">
             <div class="text">
               {{param.title}}
             </div>
@@ -39,7 +39,7 @@
           <div class="body" ng-transclude="body">
             <div class="content">{{param.body}}</div>
           </div>
-          <div class="footer" ng-transclude="footer">
+          <div class="footer" ng-transclude="footer" ng-if="!param.hideFooter">
             <div class="thin-btns flex flex-arround">
               <div class="thin-btn {{param.cancel.css||'default'}}" ng-if="!param.cancel.hide" ng-click="cancel()">{{param.cancel.text||'取消'}}</div>
               <div class="thin-btn {{param.OK.css||'primary'}}" ng-if="!param.OK.hide" ng-click="OK()">{{param.OK.text||'确定'}}</div>
