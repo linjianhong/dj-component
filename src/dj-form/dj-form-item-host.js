@@ -319,7 +319,7 @@
               <${componentName} class="${configs.css.dataShow||configs.css.data||'flex-v-center'}"
                 mode="show"
                 configs="$ctrl.configs"
-                init-value="initValue"
+                init-value="$ctrl.initValue"
               ></${componentName}>
             </div>
           </div>`;

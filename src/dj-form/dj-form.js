@@ -139,7 +139,7 @@
       //console.log("Form 初始化配置 ", vNew);
       itemValid = {};
       itemDirty = {};
-      if (!vNew) return;
+      if (!vNew || !angular.isArray(vNew.items)) return;
       var templates = vNew.templates || {};
       var pre = vNew.pre || DJ_FORM_DEFAULT.pre;
       var css = vNew.css || {};
