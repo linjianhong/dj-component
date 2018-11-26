@@ -3,43 +3,102 @@
 !(function (window, angular, undefined) {
 
 
-  angular.module('dj-ui')
-    .component('djuiDate', {
-      bindings: {
-        initValue: '<',
-        onChange: '&',
-        format: '<',
-        param: '<',
-        placeholder: '@',
-      },
-      template: `
-        <div class="flex djui-input-box">
-          <input class="flex-1" type="date"
-            placeholder="{{$ctrl.placeholder}}"
-            ng-model="ngModel"
-            ng-change="onChange(ngModel)"
-          >
-        </div>
-        `,
-      controller: ['$scope', '$http', '$timeout', "$q", ctrl]
-    });
-
-  function ctrl($scope, $http, $timeout, $q) {
-    this.$onChanges = (changes) => {
-      if (changes.initValue) {
-        var str = changes.initValue.currentValue || "";
-        $scope.ngModel = new Date(Date.parse(str.replace(/-/g, "/")));
+  var theModule = angular.module('dj-ui');
+  theModule.component('djuiDate', {
+    bindings: {
+      initValue: '<',
+      onChange: '&',
+      format: '<',
+      param: '<',
+      placeholder: '@',
+    },
+    template: `
+      <div class="flex djui-input-box">
+        <input class="flex-1" type="date"
+          placeholder="{{$ctrl.placeholder}}"
+          ng-model="ngModel"
+          ng-change="onChange(ngModel)"
+        >
+      </div>`,
+    controller: ['$scope', function ($scope) {
+      this.$onChanges = (changes) => {
+        if (changes.initValue) {
+          var str = changes.initValue.currentValue || "";
+          $scope.ngModel = new Date(Date.parse(str.replace(/-/g, "/")));
+        }
       }
-    }
+      $scope.onChange = (value) => {
+        var format = this.format || this.param && this.param.format || 'yyyy-MM-dd';
+        if (value === undefined) return;
+        this.onChange({ value: timeFormat(value, format) })
+      }
+    }]
+  });
+  theModule.component('djuiTime', {
+    bindings: {
+      initValue: '<',
+      onChange: '&',
+      format: '<',
+      param: '<',
+      placeholder: '@',
+    },
+    template: `
+      <div class="flex djui-input-box">
+        <input class="flex-1" type="time"
+          placeholder="{{$ctrl.placeholder}}"
+          ng-model="ngModel"
+          ng-change="onChange(ngModel)"
+        >
+      </div>`,
+    controller: ['$scope', '$http', '$timeout', "$q", function ($scope, $http, $timeout, $q) {
+      this.$onChanges = (changes) => {
+        if (changes.initValue) {
+          var hh_mm = (changes.initValue.currentValue || "00:00").split(":");
+          $scope.ngModel = new Date();
+          $scope.ngModel.setHours(hh_mm[0]);
+          $scope.ngModel.setMinutes(hh_mm[1]);
+          $scope.ngModel.setSeconds(0);
+          $scope.ngModel.setMilliseconds(0);
+        }
+      }
+      $scope.onChange = (value) => {
+        var format = this.format || this.param && this.param.format || 'HH:mm';
+        if (value === undefined) return;
+        this.onChange({ value: timeFormat(value, format) });
+      }
+    }]
+  });
+  theModule.component('djuiDatetime', {
+    bindings: {
+      initValue: '<',
+      onChange: '&',
+      format: '<',
+      param: '<',
+      placeholder: '@',
+    },
+    template: `
+      <div class="flex djui-input-box">
+        <input class="flex-1" type="datetime-local"
+          placeholder="{{$ctrl.placeholder}}"
+          ng-model="ngModel"
+          ng-change="onChange(ngModel)"
+        >
+      </div>`,
+    controller: ['$scope', '$http', '$timeout', "$q", function ($scope, $http, $timeout, $q) {
+      this.$onChanges = (changes) => {
+        if (changes.initValue) {
+          var str = changes.initValue.currentValue || "";
+          $scope.ngModel = new Date(Date.parse(str.replace(/-/g, "/")));
+        }
+      }
+      $scope.onChange = (value) => {
+        var format = this.format || this.param && this.param.format || 'yyyy-MM-dd HH:mm';
+        if (value === undefined) return;
+        this.onChange({ value: timeFormat(value, format) })
+      }
+    }]
+  });
 
-
-    $scope.onChange = (value) => {
-      var format = this.format || this.param && this.param.format || 'yyyy-MM-dd';
-      if(value === undefined) return;
-      this.onChange({ value: timeFormat(value, format) })
-    }
-
-  }
 
 
   angular.module('dj-ui')
@@ -60,7 +119,7 @@
    * (new Date()).pattern("yyyy-M-d h:m:s.S") ==> 2006-7-2 8:9:4.18
    */
   function timeFormat(t, fmt) {
-    if(!(t instanceof Date)) return "";
+    if (!(t instanceof Date)) return "";
     var o = {
       "M+": t.getMonth() + 1, //月份
       "d+": t.getDate(), //日
@@ -94,7 +153,7 @@
     return fmt;
   }
 
-  Date.prototype.timeFormat = function(format){
+  Date.prototype.format = Date.prototype.timeFormat = function (format) {
     return timeFormat(this, format || "yyyy-MM-dd");
   }
 
