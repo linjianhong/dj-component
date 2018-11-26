@@ -52,7 +52,11 @@
         } else {
           $scope.value = $scope.value.filter(v => v != item_value);
         }
-        this.onChange({ value: $scope.value });
+        var value = [];
+        $scope.list.map(item => {
+          if ($scope.value.indexOf(item) >= 0) value.push(item);
+        });
+        this.onChange({ value });
       }
     }]
   });
