@@ -300,7 +300,7 @@ angular.module('dj-ui', ['ngAnimate']);
       var componentName = configs.componentShow || configs.component;
       var css = configs.css.hostShow || configs.css.host || 'normal';
       if (componentName) {
-        var template = '\n          <div class="' + css + '">\n            <div flex-row="5em" class="{{configs.css.hostBodyShow}}">\n              <span class="a" ng-hide="configs.hideTip">{{configs.title}}</span>\n              <' + componentName + ' class="' + (configs.css.dataShow || configs.css.data || 'flex-v-center') + '"\n                mode="show"\n                configs="$ctrl.configs"\n                init-value="initValue"\n              ></' + componentName + '>\n            </div>\n          </div>';
+        var template = '\n          <div class="' + css + '">\n            <div flex-row="5em" class="{{configs.css.hostBodyShow}}">\n              <span class="a" ng-hide="configs.hideTip">{{configs.title}}</span>\n              <' + componentName + ' class="' + (configs.css.dataShow || configs.css.data || 'flex-v-center') + '"\n                mode="show"\n                configs="$ctrl.configs"\n                init-value="$ctrl.initValue"\n              ></' + componentName + '>\n            </div>\n          </div>';
         $element.html(template);
         $compile($element.contents())($scope);
         return;
@@ -458,7 +458,7 @@ angular.module('dj-form').filter('formFormat', function () {
       //console.log("Form 初始化配置 ", vNew);
       itemValid = {};
       itemDirty = {};
-      if (!vNew) return;
+      if (!vNew || !angular.isArray(vNew.items)) return;
       var templates = vNew.templates || {};
       var pre = vNew.pre || DJ_FORM_DEFAULT.pre;
       var css = vNew.css || {};
@@ -1063,7 +1063,11 @@ angular.module('dj-form').filter('formFormat', function () {
             return v != item_value;
           });
         }
-        _this8.onChange({ value: $scope.value });
+        var value = [];
+        $scope.list.map(function (item) {
+          if ($scope.value.indexOf(item) >= 0) value.push(item);
+        });
+        _this8.onChange({ value: value });
       };
     }]
   });
@@ -1427,6 +1431,12 @@ angular.module('dj-form').filter('formFormat', function () {
     /** 日期框 */
     "date": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <djui-date class="b flex"\n        param="$ctrl.configs.param"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-date>',
 
+    /** 时间框 */
+    "time": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <djui-time class="b flex"\n        param="$ctrl.configs.param"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-time>',
+
+    /** 时间框 */
+    "datetime": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <djui-datetime class="b flex"\n        param="$ctrl.configs.param"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n        init-value="$ctrl.initValue"\n        on-change="$ctrl.onChange({value: value})"\n      ></djui-datetime>',
+
     /** 多行文本 */
     "textarea": '\n      <div class="a flex prompt-top" dj-form-default-tip></div>\n      <textarea class="b"\n        ng-model="value"\n        ng-change="change(value)"\n        placeholder="{{$ctrl.configs.param.placeholder}}"\n      ></textarea>',
 
@@ -1455,7 +1465,7 @@ angular.module('dj-form').filter('formFormat', function () {
     "imgs-uploader-show": '\n      <div class="flex">\n        <imgs-uploader class="ab padding-v-1 {{$ctrl.configs.css.hostBodyShow}}"\n          imgs="$ctrl.initValue"\n          mode="show"\n        ></imgs-uploader>\n      </div>\n    '
   };
 
-  var theComponentDefines = [{ name: "input", showTemplate: "initValue-format-show" }, { name: "date", controller: "input" }, { name: "textarea", showTemplate: "textarea-show", controller: "input" }, { name: "dropdown", showTemplate: "text-format-show", showController: "dropdown-show" }, { name: "combobox", showTemplate: "initValue-format-show", showController: "dropdown-show" }, { name: "tags" }, { name: "radio" }, { name: "star", controller: "input" }, { name: "check-box" }, { name: "imgs-uploader" }];
+  var theComponentDefines = [{ name: "input", showTemplate: "initValue-format-show" }, { name: "date", controller: "input" }, { name: "time", controller: "input" }, { name: "datetime", controller: "input" }, { name: "textarea", showTemplate: "textarea-show", controller: "input" }, { name: "dropdown", showTemplate: "text-format-show", showController: "dropdown-show" }, { name: "combobox", showTemplate: "initValue-format-show", showController: "dropdown-show" }, { name: "tags" }, { name: "radio" }, { name: "star", controller: "input" }, { name: "check-box" }, { name: "imgs-uploader" }];
   /** 强制引用 */
   var theComponentDefineRefs = {
     select: "dropdown",
@@ -2318,7 +2328,8 @@ angular.module('dj-form').filter('formFormat', function () {
 
 !function (window, angular, undefined) {
 
-  angular.module('dj-ui').component('djuiDate', {
+  var theModule = angular.module('dj-ui');
+  theModule.component('djuiDate', {
     bindings: {
       initValue: '<',
       onChange: '&',
@@ -2326,26 +2337,77 @@ angular.module('dj-form').filter('formFormat', function () {
       param: '<',
       placeholder: '@'
     },
-    template: '\n        <div class="flex djui-input-box">\n          <input class="flex-1" type="date"\n            placeholder="{{$ctrl.placeholder}}"\n            ng-model="ngModel"\n            ng-change="onChange(ngModel)"\n          >\n        </div>\n        ',
-    controller: ['$scope', '$http', '$timeout', "$q", ctrl]
+    template: '\n      <div class="flex djui-input-box">\n        <input class="flex-1" type="date"\n          placeholder="{{$ctrl.placeholder}}"\n          ng-model="ngModel"\n          ng-change="onChange(ngModel)"\n        >\n      </div>',
+    controller: ['$scope', function ($scope) {
+      var _this14 = this;
+
+      this.$onChanges = function (changes) {
+        if (changes.initValue) {
+          var str = changes.initValue.currentValue || "";
+          $scope.ngModel = new Date(Date.parse(str.replace(/-/g, "/")));
+        }
+      };
+      $scope.onChange = function (value) {
+        var format = _this14.format || _this14.param && _this14.param.format || 'yyyy-MM-dd';
+        if (value === undefined) return;
+        _this14.onChange({ value: timeFormat(value, format) });
+      };
+    }]
   });
+  theModule.component('djuiTime', {
+    bindings: {
+      initValue: '<',
+      onChange: '&',
+      format: '<',
+      param: '<',
+      placeholder: '@'
+    },
+    template: '\n      <div class="flex djui-input-box">\n        <input class="flex-1" type="time"\n          placeholder="{{$ctrl.placeholder}}"\n          ng-model="ngModel"\n          ng-change="onChange(ngModel)"\n        >\n      </div>',
+    controller: ['$scope', '$http', '$timeout', "$q", function ($scope, $http, $timeout, $q) {
+      var _this15 = this;
 
-  function ctrl($scope, $http, $timeout, $q) {
-    var _this14 = this;
+      this.$onChanges = function (changes) {
+        if (changes.initValue) {
+          var hh_mm = (changes.initValue.currentValue || "00:00").split(":");
+          $scope.ngModel = new Date();
+          $scope.ngModel.setHours(hh_mm[0]);
+          $scope.ngModel.setMinutes(hh_mm[1]);
+          $scope.ngModel.setSeconds(0);
+          $scope.ngModel.setMilliseconds(0);
+        }
+      };
+      $scope.onChange = function (value) {
+        var format = _this15.format || _this15.param && _this15.param.format || 'HH:mm';
+        if (value === undefined) return;
+        _this15.onChange({ value: timeFormat(value, format) });
+      };
+    }]
+  });
+  theModule.component('djuiDatetime', {
+    bindings: {
+      initValue: '<',
+      onChange: '&',
+      format: '<',
+      param: '<',
+      placeholder: '@'
+    },
+    template: '\n      <div class="flex djui-input-box">\n        <input class="flex-1" type="datetime-local"\n          placeholder="{{$ctrl.placeholder}}"\n          ng-model="ngModel"\n          ng-change="onChange(ngModel)"\n        >\n      </div>',
+    controller: ['$scope', '$http', '$timeout', "$q", function ($scope, $http, $timeout, $q) {
+      var _this16 = this;
 
-    this.$onChanges = function (changes) {
-      if (changes.initValue) {
-        var str = changes.initValue.currentValue || "";
-        $scope.ngModel = new Date(Date.parse(str.replace(/-/g, "/")));
-      }
-    };
-
-    $scope.onChange = function (value) {
-      var format = _this14.format || _this14.param && _this14.param.format || 'yyyy-MM-dd';
-      if (value === undefined) return;
-      _this14.onChange({ value: timeFormat(value, format) });
-    };
-  }
+      this.$onChanges = function (changes) {
+        if (changes.initValue) {
+          var str = changes.initValue.currentValue || "";
+          $scope.ngModel = new Date(Date.parse(str.replace(/-/g, "/")));
+        }
+      };
+      $scope.onChange = function (value) {
+        var format = _this16.format || _this16.param && _this16.param.format || 'yyyy-MM-dd HH:mm';
+        if (value === undefined) return;
+        _this16.onChange({ value: timeFormat(value, format) });
+      };
+    }]
+  });
 
   angular.module('dj-ui').filter('timespan', function () {
     //可以注入依赖
@@ -2399,7 +2461,7 @@ angular.module('dj-form').filter('formFormat', function () {
     return fmt;
   }
 
-  Date.prototype.timeFormat = function (format) {
+  Date.prototype.format = Date.prototype.timeFormat = function (format) {
     return timeFormat(this, format || "yyyy-MM-dd");
   };
 }(window, angular);
@@ -2509,7 +2571,7 @@ angular.module('dj-form').filter('formFormat', function () {
     replace: true,
     template: '\n      <div class="djui-gallery-box">\n        <div class="djui-gallery-list" ng-transclude>\n          <div class="djui-gallery-item item-{{$index+1-active}}" ng-repeat="img in imgs track by $index" >\n            <img class="" ng-src="{{img}}"/>\n          </div>\n        </div>\n        <div class="djui-gallery-debug" ng-if="debug">\n          {{debug}}\n        </div>\n        <div class="djui-gallery-top" ng-if="isMoving">\n        </div>\n      </div>\n      <div class="djui-gallery-nav flex flex-between">\n        <div class="dots flex flex-1 flex-center" ng-if="1">\n          <div ng-click="scrollTo($index)" ng-repeat="img in imgs track by $index">{{$index==active&&\'\u25CF\'||\'\u25CB\'}}</div>\n        </div>\n        <div class="btns flex flex-center" ng-if="$ctrl.btns.length">\n          <div ng-click="clickButton(btn)" ng-repeat="btn in $ctrl.btns track by $index">\n            <div class="{{btn.css}}">{{btn.text||\'\'}}</div>\n          </div>\n        </div>\n      </div>\n    ',
     controller: ["$scope", "$window", "$element", "$q", "$animateCss", function ($scope, $window, $element, $q, $animateCss) {
-      var _this15 = this;
+      var _this17 = this;
 
       $scope.active = 0;
       $scope.pageCount = 1;
@@ -2681,7 +2743,7 @@ angular.module('dj-form').filter('formFormat', function () {
         animator.start().then(function (a) {
           //console.log("动画结束, a = ", a);
           $scope.active = nth;
-          _this15.onPage({ page: nth });
+          _this17.onPage({ page: nth });
         }).catch(function (e) {
           console.log("动画结束, e = ", e);
         });
@@ -3052,7 +3114,7 @@ angular.module('dj-form').filter('formFormat', function () {
   });
 
   function ctrl($scope, $http, $element, IMG, DjPop) {
-    var _this16 = this;
+    var _this18 = this;
 
     var imgData = this.imgData = { uploadings: [] };
     $scope.imgList = [];
@@ -3078,17 +3140,17 @@ angular.module('dj-form').filter('formFormat', function () {
       }).then(function () {
         //console.log("删除图片", $scope.imgList);
         var imgs = angular.merge([], $scope.imgList);
-        _this16.updateImg({ imgs: imgs, value: imgs });
-        _this16.onChange({ imgs: imgs, value: imgs });
+        _this18.updateImg({ imgs: imgs, value: imgs });
+        _this18.onChange({ imgs: imgs, value: imgs });
       });
     };
     $scope.clickImg = function (n) {
-      if (_this16.preview === 'no') return;
+      if (_this18.preview === 'no') return;
       //DjPop.show("show-gallery", {imgs: this.imgs, remove: this.deleteImg})
       DjPop.gallery({
         imgs: $scope.imgList,
         active: n,
-        btns: $scope.mode == "show" ? [] : [{ css: "icon-del", fn: _this16.deleteImg }]
+        btns: $scope.mode == "show" ? [] : [{ css: "icon-del", fn: _this18.deleteImg }]
       }).then(function (data) {
         //console.log("show-gallery", data);
       }).catch(function (data) {
@@ -3100,8 +3162,8 @@ angular.module('dj-form').filter('formFormat', function () {
       $scope.imgList.push(url);
       //console.log("添加图片", $scope.imgList);
       var imgs = angular.merge([], $scope.imgList);
-      _this16.updateImg({ imgs: imgs, value: imgs });
-      _this16.onChange({ imgs: imgs, value: imgs });
+      _this18.updateImg({ imgs: imgs, value: imgs });
+      _this18.onChange({ imgs: imgs, value: imgs });
     };
 
     $scope.addClick = function () {
